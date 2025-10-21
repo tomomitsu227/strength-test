@@ -6,12 +6,19 @@ import uuid
 from datetime import datetime
 from models_mbti import save_response, get_all_responses, calculate_mbti_result
 from pdf_generator_mbti_improved import generate_pdf_report
+import os
+
+
 
 app = Flask(__name__)
 CORS(app)
 
 # MBTI質問データの読み込み
-with open('data/mbti_questions.json', 'r', encoding='utf-8') as f:
+# ファイルパスを動的に取得
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_PATH = os.path.join(BASE_DIR, '..', 'data', 'mbti_questions.json')
+
+with open(DATA_PATH, 'r', encoding='utf-8') as f:
     QUESTIONS_DATA = json.load(f)
 
 # 動物タイプデータ

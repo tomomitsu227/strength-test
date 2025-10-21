@@ -18,7 +18,8 @@ import {
 
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
 
-const API_BASE = 'http://localhost:5000/api';
+const APIBASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000/api";
+
 
 interface Question {
   q: string;
