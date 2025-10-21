@@ -1,0 +1,146 @@
+{
+  "questions": [
+    {
+      "q": "論理的で分析的な思考を好み、データに基づいて判断することが多い。",
+      "domain": "4brain",
+      "category": "左脳",
+      "weight": 1.2
+    },
+    {
+      "q": "直感的で創造的な発想が得意で、新しいアイデアを生み出すことが多い。",
+      "domain": "4brain",
+      "category": "右脳",
+      "weight": 1.2
+    },
+    {
+      "q": "計画性があり、長期的な視点で物事を考える傾向がある。",
+      "domain": "4brain",
+      "category": "前頭葉",
+      "weight": 1.1
+    },
+    {
+      "q": "視覚的な情報を処理するのが得意で、図表やグラフを理解しやすい。",
+      "domain": "4brain",
+      "category": "後頭葉",
+      "weight": 1.1
+    },
+    {
+      "q": "感情的な判断と論理的な判断をバランスよく使い分けることができる。",
+      "domain": "4brain",
+      "category": "統合",
+      "weight": 1.3
+    },
+    {
+      "q": "好奇心が強く、新しいことを学ぶことに喜びを感じる。",
+      "domain": "VIA",
+      "category": "好奇心",
+      "weight": 1.2
+    },
+    {
+      "q": "困難な状況でも希望を失わず、前向きに取り組むことができる。",
+      "domain": "VIA",
+      "category": "希望",
+      "weight": 1.1
+    },
+    {
+      "q": "他者を思いやり、困っている人を助けたいと思うことが多い。",
+      "domain": "VIA",
+      "category": "親切心",
+      "weight": 1.2
+    },
+    {
+      "q": "困難な課題に直面しても、粘り強く取り組むことができる。",
+      "domain": "VIA",
+      "category": "忍耐力",
+      "weight": 1.1
+    },
+    {
+      "q": "自分の価値観に基づいて行動し、信念を貫くことができる。",
+      "domain": "VIA",
+      "category": "誠実性",
+      "weight": 1.3
+    },
+    {
+      "q": "人を動かし、影響を与えることに自然な才能を感じる。",
+      "domain": "strengths",
+      "category": "影響力",
+      "weight": 1.2
+    },
+    {
+      "q": "複雑な問題を分析し、解決策を見つけることが得意だ。",
+      "domain": "strengths",
+      "category": "分析思考",
+      "weight": 1.2
+    },
+    {
+      "q": "新しいアイデアや可能性を生み出すことに喜びを感じる。",
+      "domain": "strengths",
+      "category": "着想",
+      "weight": 1.1
+    },
+    {
+      "q": "人との関係を築き、維持することが得意だ。",
+      "domain": "strengths",
+      "category": "人間関係構築",
+      "weight": 1.2
+    },
+    {
+      "q": "目標に向かって継続的に努力し、成果を上げることができる。",
+      "domain": "strengths",
+      "category": "達成欲",
+      "weight": 1.3
+    },
+    {
+      "q": "困難な状況でもモチベーションを維持し続けることができる。",
+      "domain": "motivation",
+      "category": "持続性",
+      "weight": 1.2
+    },
+    {
+      "q": "失敗を恐れず、チャレンジすることを恐れない。",
+      "domain": "motivation",
+      "category": "挑戦性",
+      "weight": 1.1
+    },
+    {
+      "q": "自分自身を信じ、自信を持って行動することができる。",
+      "domain": "motivation",
+      "category": "自己効力感",
+      "weight": 1.2
+    },
+    {
+      "q": "目標を設定し、それを達成するための計画を立てることが得意だ。",
+      "domain": "motivation",
+      "category": "目標設定",
+      "weight": 1.1
+    },
+    {
+      "q": "周囲からのサポートやフィードバックを積極的に求めることができる。",
+      "domain": "motivation",
+      "category": "サポート活用",
+      "weight": 1.3
+    }
+  ],
+  "domains": {
+    "4brain": {
+      "name": "4脳分類",
+      "evidence_weight": 0.6,
+      "description": "左脳・右脳・前頭葉・後頭葉の特性分析。科学的根拠は限定的ですが、思考スタイルの傾向を把握する参考になります。"
+    },
+    "VIA": {
+      "name": "VIA強み",
+      "evidence_weight": 1.0,
+      "description": "ポジティブ心理学の第一人者マーティン・セリグマン博士らが開発した、24の性格の強みに基づく診断。学術的な裏付けが最も強い。"
+    },
+    "strengths": {
+      "name": "ストレングスファインダー",
+      "evidence_weight": 0.85,
+      "description": "ギャラップ社が開発した34の資質分類。ビジネス現場で広く活用され、実用性が高い。"
+    },
+    "motivation": {
+      "name": "モチベーション維持",
+      "evidence_weight": 0.9,
+      "description": "自己決定理論や達成動機理論など、動機づけ研究に基づく診断。継続的な成長を促す要素を測定。"
+    }
+  }
+}
