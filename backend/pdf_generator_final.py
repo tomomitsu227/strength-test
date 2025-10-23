@@ -1,4 +1,4 @@
-# backend/pdf_generator_final.py - サーバー対応版
+# backend/pdf_generator_final.py - サーバー対応＆クラッシュ修正版
 import io
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
@@ -7,10 +7,13 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Paragraph
 from reportlab.lib.colors import black, green, orange
+# ★★★ 追加：reportlabがメモリ上の画像を読み込むためのツール ★★★
+from reportlab.lib.utils import ImageReader
 import matplotlib
-# ★★★ 追加：matplotlibに画面を使わないモード(Agg)を指示 ★★★
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+# ★★★ 追加：matplotlibに日本語フォントの場所を教えるためのツール ★★★
+from matplotlib.font_manager import FontProperties
 import numpy as np
 import os
 
@@ -19,17 +22,18 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FONT_PATH = os.path.join(BASE_DIR, 'ipaexg.ttf')
 pdfmetrics.registerFont(TTFont('ipaexg', FONT_PATH))
 
+# ★★★ 追加：matplotlib用の日本語フォント設定 ★★★
+jp_font = FontProperties(fname=FONT_PATH)
+
 def generate_pdf_report_final(user_id, result_data):
     buffer = io.BytesIO()
     p = canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
 
     # --- レーダーチャート画像を生成 ---
-    # ★★★ 修正：radar_scoresのキーを固定の10次元リストに変更 ★★★
     labels = ['Openness', 'Conscientiousness', 'Extraversion', 'Agreeableness', 'StressTolerance', 'InformationStyle', 'DecisionMaking', 'MotivationSource', 'ValuePursuit', 'WorkStyle']
     jp_labels = ['開放性', '誠実性', '外向性', '協調性', 'ストレス耐性', '情報スタイル', '意思決定', 'モチベーション', '価値追求', '作業スタイル']
     
-    # labelsの順番でスコアを取得
     stats = [result_data.get('radar_scores', {}).get(label, 0) for label in labels]
     
     angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
@@ -41,8 +45,9 @@ def generate_pdf_report_final(user_id, result_data):
     ax.plot(angles_closed, stats_closed, color='red', linewidth=2)
     ax.set_yticklabels([])
     ax.set_xticks(angles)
-    ax.set_xticklabels(jp_labels, fontname='ipaexg', fontsize=12)
-    ax.set_ylim(0, 10) # 0から10のスケールに固定
+    # ★★★ 変更点：matplotlibに日本語フォントを直接指定 ★★★
+    ax.set_xticklabels(jp_labels, fontproperties=jp_font, fontsize=12)
+    ax.set_ylim(0, 10)
 
     img_buffer = io.BytesIO()
     plt.savefig(img_buffer, format='png', bbox_inches='tight', pad_inches=0.1)
@@ -54,7 +59,9 @@ def generate_pdf_report_final(user_id, result_data):
     p.drawCentredString(width / 2, height - 70, "動画クリエイター特性診断レポート")
     p.setFont('ipaexg', 18)
     p.drawCentredString(width / 2, height - 120, f"あなたは「{result_data.get('type_name', '')}」タイプです")
-    p.drawImage(img_buffer, width/2 - 150, height - 450, width=300, height=300, preserveAspectRatio=True)
+    
+    # ★★★ 変更点：メモリ上の画像をImageReaderでラップして渡す ★★★
+    p.drawImage(ImageReader(img_buffer), width/2 - 150, height - 450, width=300, height=300, preserveAspectRatio=True)
 
     styles = getSampleStyleSheet()
     styleN = styles['Normal']
