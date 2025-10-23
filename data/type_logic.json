@@ -1,18 +1,237 @@
 {
-  "main_cores": [
-    { "type": "Visionary Leader", "priority": 100, "conditions": { "all": [ { "dimension": "Extraversion", "operator": ">", "value": 2 }, { "dimension": "Openness", "operator": ">", "value": 2 }, { "dimension": "WorkStyle", "operator": "<", "value": 0 } ] } },
-    { "type": "Knowledge Seeker", "priority": 95, "conditions": { "all": [ { "dimension": "Extraversion", "operator": "<", "value": -2 }, { "dimension": "Openness", "operator": ">", "value": 2 }, { "dimension": "WorkStyle", "operator": ">", "value": 1 } ] } },
-    { "type": "Spotlight Pioneer", "priority": 90, "conditions": { "all": [ { "dimension": "Extraversion", "operator": ">", "value": 2 }, { "dimension": "ValuePursuit", "operator": ">", "value": 1 } ] } },
-    { "type": "Solitary Artist", "priority": 85, "conditions": { "all": [ { "dimension": "Extraversion", "operator": "<", "value": -2 }, { "dimension": "Openness", "operator": ">", "value": 1 }, { "dimension": "WorkStyle", "operator": ">", "value": 2 } ] } },
-    { "type": "Team Captain", "priority": 80, "conditions": { "all": [ { "dimension": "Extraversion", "operator": ">", "value": 1 }, { "dimension": "Agreeableness", "operator": ">", "value": 1 }, { "dimension": "WorkStyle", "operator": "<", "value": -1 } ] } },
-    { "type": "System Architect", "priority": 75, "conditions": { "all": [ { "dimension": "Extraversion", "operator": "<", "value": 0 }, { "dimension": "Conscientiousness", "operator": ">", "value": 2 }, { "dimension": "ValuePursuit", "operator": "<", "value": -1 } ] } },
-    { "type": "Community Organizer", "priority": 70, "conditions": { "all": [ { "dimension": "Extraversion", "operator": ">", "value": 2 }, { "dimension": "Agreeableness", "operator": ">", "value": 2 } ] } },
-    { "type": "Trend Hacker", "priority": 65, "conditions": { "all": [ { "dimension": "Extraversion", "operator": "<", "value": -1 }, { "dimension": "ValuePursuit", "operator": "<", "value": -1 }, { "dimension": "InformationStyle", "operator": ">", "value": 1 } ] } },
-    { "type": "Passionate Evangelist", "priority": 60, "conditions": { "all": [ { "dimension": "Extraversion", "operator": ">", "value": 1 }, { "dimension": "MotivationSource", "operator": ">", "value": 1 } ] } },
-    { "type": "Empathetic Storyteller", "priority": 55, "conditions": { "all": [ { "dimension": "Extraversion", "operator": "<", "value": -1 }, { "dimension": "Agreeableness", "operator": ">", "value": 2 } ] } },
-    { "type": "Practical Entertainer", "priority": 50, "conditions": { "all": [ { "dimension": "Extraversion", "operator": ">", "value": 1 }, { "dimension": "ValuePursuit", "operator": "<", "value": 0 } ] } },
-    { "type": "Supportive Producer", "priority": 45, "conditions": { "all": [ { "dimension": "WorkStyle", "operator": "<", "value": -1 }, { "dimension": "Agreeableness", "operator": ">", "value": 1 } ] } }
-  ],
-  "sub_cores": { "The Planner": { "scores": { "Conscientiousness": 2, "Openness": -1 } }, "The Analyst": { "scores": { "InformationStyle": 1.5, "DecisionMaking": 1.5, "Agreeableness": -1 } }, "The Harmonizer": { "scores": { "Agreeableness": 2, "DecisionMaking": -1.5 } }, "The Accelerator": { "scores": { "Conscientiousness": -2, "Extraversion": 1 } }, "The Deep-Diver": { "scores": { "Openness": 2, "InformationStyle": -1 } } },
+  "scoring_method": "cosine_similarity",
+  "description": "各メインコアタイプとの類似度を計算し、最も近いタイプを判定します",
+  "main_core_profiles": {
+    "Solitary Artist": {
+      "japanese_name": "孤高のアーティスト",
+      "description": "独創的で内向的、一人での創作を好む",
+      "ideal_scores": {
+        "Openness": 3.5,
+        "Conscientiousness": 0,
+        "Extraversion": -3.5,
+        "Agreeableness": 0,
+        "StressTolerance": 0,
+        "InformationStyle": -2,
+        "DecisionMaking": 1,
+        "MotivationSource": 3,
+        "ValuePursuit": 3,
+        "WorkStyle": 3.5
+      }
+    },
+    "Visionary Leader": {
+      "japanese_name": "ビジョナリーリーダー",
+      "description": "革新的で外向的、チームを導く",
+      "ideal_scores": {
+        "Openness": 3,
+        "Conscientiousness": 1,
+        "Extraversion": 3.5,
+        "Agreeableness": 1,
+        "StressTolerance": 2,
+        "InformationStyle": -2,
+        "DecisionMaking": 1,
+        "MotivationSource": 2,
+        "ValuePursuit": 3,
+        "WorkStyle": -2.5
+      }
+    },
+    "Knowledge Seeker": {
+      "japanese_name": "知の探求者",
+      "description": "好奇心旺盛で内向的、深い学びを追求",
+      "ideal_scores": {
+        "Openness": 3.5,
+        "Conscientiousness": 2,
+        "Extraversion": -3,
+        "Agreeableness": 0,
+        "StressTolerance": 1,
+        "InformationStyle": -2,
+        "DecisionMaking": 2,
+        "MotivationSource": 3.5,
+        "ValuePursuit": 2,
+        "WorkStyle": 3
+      }
+    },
+    "Spotlight Pioneer": {
+      "japanese_name": "スポットライトパイオニア",
+      "description": "目立つのが好きで革新的",
+      "ideal_scores": {
+        "Openness": 2.5,
+        "Conscientiousness": -1,
+        "Extraversion": 3.5,
+        "Agreeableness": 0,
+        "StressTolerance": 2,
+        "InformationStyle": 0,
+        "DecisionMaking": 0,
+        "MotivationSource": 1,
+        "ValuePursuit": 3.5,
+        "WorkStyle": -1
+      }
+    },
+    "Team Captain": {
+      "japanese_name": "チームキャプテン",
+      "description": "協調的で外向的、チームをまとめる",
+      "ideal_scores": {
+        "Openness": 1,
+        "Conscientiousness": 2,
+        "Extraversion": 3,
+        "Agreeableness": 3.5,
+        "StressTolerance": 2,
+        "InformationStyle": 1,
+        "DecisionMaking": -1,
+        "MotivationSource": 0,
+        "ValuePursuit": 0,
+        "WorkStyle": -3
+      }
+    },
+    "System Architect": {
+      "japanese_name": "システムアーキテクト",
+      "description": "計画的で論理的、システムを構築",
+      "ideal_scores": {
+        "Openness": 1,
+        "Conscientiousness": 3.5,
+        "Extraversion": -2,
+        "Agreeableness": -1,
+        "StressTolerance": 2,
+        "InformationStyle": 2,
+        "DecisionMaking": 3,
+        "MotivationSource": 1,
+        "ValuePursuit": -2,
+        "WorkStyle": 2
+      }
+    },
+    "Community Organizer": {
+      "japanese_name": "コミュニティオーガナイザー",
+      "description": "社交的で協調的",
+      "ideal_scores": {
+        "Openness": 1,
+        "Conscientiousness": 1,
+        "Extraversion": 3.5,
+        "Agreeableness": 3.5,
+        "StressTolerance": 1,
+        "InformationStyle": 0,
+        "DecisionMaking": -2,
+        "MotivationSource": 0,
+        "ValuePursuit": 0,
+        "WorkStyle": -2
+      }
+    },
+    "Trend Hacker": {
+      "japanese_name": "トレンドハッカー",
+      "description": "データ分析に優れ、効率的",
+      "ideal_scores": {
+        "Openness": 0,
+        "Conscientiousness": 1,
+        "Extraversion": -2,
+        "Agreeableness": -1,
+        "StressTolerance": 2,
+        "InformationStyle": 3,
+        "DecisionMaking": 2,
+        "MotivationSource": -1,
+        "ValuePursuit": -3,
+        "WorkStyle": 1
+      }
+    },
+    "Passionate Evangelist": {
+      "japanese_name": "情熱的な伝道師",
+      "description": "熱意があり外向的",
+      "ideal_scores": {
+        "Openness": 2,
+        "Conscientiousness": 0,
+        "Extraversion": 3,
+        "Agreeableness": 1,
+        "StressTolerance": 2,
+        "InformationStyle": -1,
+        "DecisionMaking": -1,
+        "MotivationSource": 3.5,
+        "ValuePursuit": 1,
+        "WorkStyle": -1
+      }
+    },
+    "Empathetic Storyteller": {
+      "japanese_name": "共感的なストーリーテラー",
+      "description": "感受性豊かで内向的",
+      "ideal_scores": {
+        "Openness": 2.5,
+        "Conscientiousness": 0,
+        "Extraversion": -2.5,
+        "Agreeableness": 3.5,
+        "StressTolerance": -1,
+        "InformationStyle": -1,
+        "DecisionMaking": -3,
+        "MotivationSource": 2,
+        "ValuePursuit": 1,
+        "WorkStyle": 1
+      }
+    },
+    "Practical Entertainer": {
+      "japanese_name": "実践的なエンターテイナー",
+      "description": "社交的で実用的",
+      "ideal_scores": {
+        "Openness": 0,
+        "Conscientiousness": 0,
+        "Extraversion": 3,
+        "Agreeableness": 1,
+        "StressTolerance": 1,
+        "InformationStyle": 1,
+        "DecisionMaking": 0,
+        "MotivationSource": -1,
+        "ValuePursuit": -1,
+        "WorkStyle": -1
+      }
+    },
+    "Supportive Producer": {
+      "japanese_name": "縁の下のプロデューサー",
+      "description": "支援的で協調的",
+      "ideal_scores": {
+        "Openness": 0,
+        "Conscientiousness": 1,
+        "Extraversion": 0,
+        "Agreeableness": 3,
+        "StressTolerance": 1,
+        "InformationStyle": 0,
+        "DecisionMaking": -1,
+        "MotivationSource": 0,
+        "ValuePursuit": 0,
+        "WorkStyle": -2.5
+      }
+    }
+  },
+  "sub_cores": {
+    "The Planner": {
+      "japanese_name": "計画者",
+      "scores": {
+        "Conscientiousness": 2,
+        "Openness": -1
+      }
+    },
+    "The Analyst": {
+      "japanese_name": "分析者",
+      "scores": {
+        "InformationStyle": 1.5,
+        "DecisionMaking": 1.5,
+        "Agreeableness": -1
+      }
+    },
+    "The Harmonizer": {
+      "japanese_name": "調和者",
+      "scores": {
+        "Agreeableness": 2,
+        "DecisionMaking": -1.5
+      }
+    },
+    "The Accelerator": {
+      "japanese_name": "加速者",
+      "scores": {
+        "Conscientiousness": -2,
+        "Extraversion": 1
+      }
+    },
+    "The Deep-Diver": {
+      "japanese_name": "深層探求者",
+      "scores": {
+        "Openness": 2,
+        "InformationStyle": -1
+      }
+    }
+  },
   "fallback_main_core": "Practical Entertainer"
 }

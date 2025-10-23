@@ -69,7 +69,7 @@ export default function Home() {
         <h2 className="text-2xl font-bold text-purple-800 mb-4">あなたのユニークさ分析</h2>
         <div className="space-y-6">
           <div>
-            <div className="flex justify-between items-center mb-1"><h3 className="font-bold text-gray-700">回答の明確さ（尖り度）</h3><span className="font-bold text-purple-700">{result.data_analysis.extremeness_score}%</span></div>
+            <div className="flex justify-between items-center mb-1"><h3 className="font-bold text-gray-700">尖り度合</h3><span className="font-bold text-purple-700">{result.data_analysis.extremeness_score}%</span></div>
             <div className="w-full bg-gray-200 rounded-full h-2.5"><div className="bg-purple-500 h-2.5 rounded-full" style={{ width: `${result.data_analysis.extremeness_score}%` }}></div></div>
             <p className="text-sm text-gray-600 mt-2">{result.data_analysis.extremeness_comment}</p>
           </div>
@@ -96,8 +96,8 @@ export default function Home() {
   const currentQ = questionsData.questions[currentQuestion];
   return ( <div className="min-h-screen bg-gray-50 flex flex-col"> <div className="bg-white shadow-sm sticky top-0 z-10 p-4"> <div className="w-full bg-gray-200 rounded-full h-2.5"><motion.div className="bg-red-500 h-2.5 rounded-full" animate={{ width: `${progress}%` }} /></div> <p className="text-center text-sm text-gray-600 mt-2">{currentQuestion + 1} / 20</p> </div> <div className="flex-1 flex items-center justify-center p-4"> <AnimatePresence mode="wait"> <motion.div key={currentQuestion} initial={{ x: 300, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -300, opacity: 0 }} transition={{ duration: 0.3 }} className="w-full max-w-2xl bg-white rounded-2xl shadow-lg p-8">
     <div className="flex items-center justify-center mb-6">
-      <div className="flex items-center justify-center w-12 h-12 bg-red-500 text-white font-bold text-2xl rounded-full">Q</div>
-      <div className="text-3xl font-bold text-gray-700 ml-3">{currentQuestion + 1}</div>
+      <div className="flex items-center justify-center w-12 h-12 bg-red-500 text-white font-bold text-2xl rounded-full">{currentQuestion + 1}</div>
+      <div className="text-3xl font-bold text-gray-700 ml-3"></div>
     </div>
     <h2 className="text-2xl font-bold text-gray-800 mb-8 text-center leading-relaxed">{currentQ.q}</h2>
     <div className="space-y-3"> {[{ v: 5, l: '非常にそう思う' }, { v: 4, l: 'ややそう思う' }, { v: 3, l: 'どちらとも言えない' }, { v: 2, l: 'あまりそう思わない' }, { v: 1, l: '全くそう思わない' }].map(o => (<button key={o.v} onClick={() => handleAnswer(o.v)} disabled={isTransitioning} className="w-full p-4 border rounded-lg hover:bg-red-50 hover:border-red-400 transition-colors text-left disabled:opacity-50"><span className="text-lg">{o.l}</span></button>))} </div>
