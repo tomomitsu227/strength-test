@@ -278,15 +278,15 @@ export default function Home() {
 if (completed && result) {
     // レーダーチャート用データ
     const radarData = {
-      // ↓↓↓ このlabelsを修正
+      // ↓↓↓ このlabelsを正しい10次元の名称に修正します
       labels: [
-        '開放性', '誠実性', '外向性', '協調性', 'ストレス耐性', 
+        '開放性', '誠実性', '外向性', '協調性', 'ストレス耐性',
         '情報スタイル', '意思決定', 'モチベーション', '価値追求', '作業スタイル'
       ],
       datasets: [
         {
           label: 'あなたのスコア',
-          // ↓↓↓ このdataの参照先を修正
+          // ↓↓↓ このdataの参照先も、念のため確認・修正します
           data: [
             result.radar_scores?.Openness || 0,
             result.radar_scores?.Conscientiousness || 0,
