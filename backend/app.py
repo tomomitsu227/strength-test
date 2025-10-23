@@ -1,182 +1,113 @@
-# backend/app.py - 改善版（総合評価・レーダースコア追加）
+# backend/app.py - 高精度診断ロジック対応版
 from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 import json
 import uuid
 from datetime import datetime
-from models_mbti import save_response, get_all_responses, calculate_mbti_result
-from pdf_generator_mbti_improved import generate_pdf_report
 import os
-
-
+from models_mbti import save_response, get_all_responses
+from pdf_generator_mbti_improved import generate_pdf_report
 
 app = Flask(__name__)
 CORS(app)
 
-# MBTI質問データの読み込み
-# ファイルパスを動的に取得
+# --- ファイルパスの定義 ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_PATH = os.path.join(BASE_DIR, '..', 'data', 'mbti_questions.json')
+QUESTIONS_PATH = os.path.join(BASE_DIR, '..', 'data', 'mbti_questions.json')
+TYPE_LOGIC_PATH = os.path.join(BASE_DIR, '..', 'data', 'type_logic.json')
 
-with open(DATA_PATH, 'r', encoding='utf-8') as f:
+# --- 設定ファイルの読み込み ---
+with open(QUESTIONS_PATH, 'r', encoding='utf-8') as f:
     QUESTIONS_DATA = json.load(f)
+with open(TYPE_LOGIC_PATH, 'r', encoding='utf-8') as f:
+    TYPE_LOGIC = json.load(f)
 
-# 動物タイプデータ
-ANIMAL_TYPES = {
-    "INTJ": {"name": "戦略家フクロウ", "icon": "🦉", "description": "論理的で独創的な戦略家。長期的なビジョンと緻密な計画でYouTubeを構築します。"},
-    "INTP": {"name": "思索家ネコ", "icon": "🐱", "description": "知的好奇心旺盛な分析家。深い洞察と独自の視点でニッチな分野で輝きます。"},
-    "ENTJ": {"name": "指揮官ライオン", "icon": "🦁", "description": "カリスマ的なリーダー。目標達成力と説得力でチャンネルを成長させます。"},
-    "ENTP": {"name": "発明家キツネ", "icon": "🦊", "description": "創造的でチャレンジ精神旺盛。新しいアイデアで視聴者を魅了します。"},
-    "INFJ": {"name": "提唱者シカ", "icon": "🦌", "description": "洞察力があり理想主義的。深いメッセージで人々の心に響く動画を作ります。"},
-    "INFP": {"name": "仲介者ウサギ", "icon": "🐰", "description": "創造的で共感力が高い。個性的な世界観で独自のファンベースを築きます。"},
-    "ENFJ": {"name": "主人公イルカ", "icon": "🐬", "description": "人を惹きつけるカリスマ性。コミュニティ作りとエンゲージメントが得意です。"},
-    "ENFP": {"name": "広報運動家コアラ", "icon": "🐨", "description": "エネルギッシュで情熱的。多様なコンテンツで幅広い視聴者を獲得します。"},
-    "ISTJ": {"name": "管理者ビーバー", "icon": "🦫", "description": "堅実で信頼性が高い。継続的な投稿と質の高いコンテンツで成功します。"},
-    "ISFJ": {"name": "擁護者パンダ", "icon": "🐼", "description": "思いやりがあり丁寧。視聴者に寄り添うコンテンツで信頼を築きます。"},
-    "ESTJ": {"name": "幹部ゾウ", "icon": "🐘", "description": "組織力と実行力が強み。効率的な運営でチャンネルを拡大します。"},
-    "ESFJ": {"name": "領事官イヌ", "icon": "🐕", "description": "社交的で協調性が高い。視聴者との交流を大切にするスタイルで成功します。"},
-    "ISTP": {"name": "巨匠オオカミ", "icon": "🐺", "description": "実践的で技術志向。How-to系や専門技術で独自のポジションを確立します。"},
-    "ISFP": {"name": "冒険家リス", "icon": "🐿️", "description": "芸術的で自由な精神。美的センスとオリジナリティで魅了します。"},
-    "ESTP": {"name": "起業家サル", "icon": "🐵", "description": "行動力があり臨機応変。トレンドを捉えた即応力で伸びるチャンネルを作ります。"},
-    "ESFP": {"name": "エンターテイナートラ", "icon": "🐯", "description": "陽気で人を楽しませる才能。エンタメ性の高いコンテンツで人気を集めます。"}
+# --- 診断タイプの詳細データ ---
+# (app.py内に保持することで、ロジックと表示内容を分離)
+TYPE_DETAILS = {
+    "Solitary Artist": {"name": "孤高のアーティスト", "icon": "🎨", "compass": "独創的な世界観を持ち、一人で黙々と作品制作に打ち込む内向的な革新者。あなたの深い内省から生まれるユニークな視点が、最大の武器です。", "focus_area": "作り込まれた映像作品、専門性の高い解説、アート系Vlogなど、独自の世界観を表現するコンテンツ制作。", "selective_focus": "大人数のコラボや頻繁なライブ配信よりも、作品のクオリティを追求することに時間を使いましょう。", "recommended_style": "映像作品、専門解説、アート系Vlog"},
+    "Trend Hacker": {"name": "トレンドハッカー", "icon": "📈", "compass": "流行を冷静に分析し、効率的に成果を出す方法を模索する内向的な効率家。データに基づいた戦略で、最短ルートを切り開きます。", "focus_area": "切り抜き動画、データに基づいた考察、効率化ノウハウなど、需要が証明されているフォーマットのコンテンツ制作。", "selective_focus": "ゼロから企画を生み出すよりも、成功事例を分析・応用することに集中するのが成功の鍵です。", "recommended_style": "切り抜き、データ考察、効率化ノウハウ"},
+    "Knowledge Seeker": {"name": "知の探求者", "icon": "📚", "compass": "深いリサーチと論理的思考で戦略を練り上げる、内向的なイノベーター。あなたの知的好奇心が、質の高いコンテンツの源泉です。", "focus_area": "複雑なテーマの長尺解説、教育系コンテンツ、書評など、深い知識を要するジャンルでの戦略設計。", "selective_focus": "表面的なトレンド追従よりも、一つのテーマを深く掘り下げ、専門家としての地位を築くことに集中しましょう。", "recommended_style": "長尺解説、教育コンテンツ、書評"},
+    "System Architect": {"name": "再現性の巨匠", "icon": "⚙️", "compass": "成功法則をシステム化し、安定したチャンネル成長を設計する内向的な戦略家。再現性のある仕組み作りで、盤石な基盤を築きます。", "focus_area": "チャンネル運営ノウハウ、再現性の高いチュートリアル、AI動画の量産など、運営をシステム化する戦略。", "selective_focus": "単発のバズを狙うより、継続的に成果を出せる仕組み作りにリソースを投下することが重要です。", "recommended_style": "運営ノウハウ、チュートリアル、AI活用"},
+    "Empathetic Storyteller": {"name": "共感のストーリーテラー", "icon": "🖋️", "compass": "人の心に寄り添い、丁寧なコミュニケーションでファンを育てる内向的なサポーター。あなたの共感力が、強いコミュニティを形成します。", "focus_area": "丁寧な暮らしVlog、視聴者の悩みに答えるコンテンツ、コミュニティ運営など、ファンとの深い関係構築。", "selective_focus": "過度な自己主張よりも、視聴者の心に寄り添うストーリーを語ることで、あなたの価値は最大化されます。", "recommended_style": "暮らしVlog、お悩み相談、コミュニティ運営"},
+    "Supportive Producer": {"name": "縁の下のプロデューサー", "icon": "🤝", "compass": "他のクリエイターやチームを後方から支え、成功に導く内向的なマネージャー。あなたのサポートが、チームの力を最大化します。", "focus_area": "チーム運営、編集代行、裏方としてのチャンネルサポートなど、他者の成功を支援する役割。", "selective_focus": "自分が表舞台に立つことよりも、チーム全体の成功をデザインすることに集中すると輝きます。", "recommended_style": "チーム運営、編集代行、裏方サポート"},
+    "Spotlight Pioneer": {"name": "スポットライトの開拓者", "icon": "🌟", "compass": "常に新しい企画に挑戦し、人々を惹きつけるカリスマを持つ外向的な革新者。あなたの行動力が、新たなトレンドを生み出します。", "focus_area": "顔出しでのチャレンジ企画、最新ガジェットレビューなど、自分が主役となるエンタメコンテンツ制作。", "selective_focus": "緻密なデータ分析よりも、直感と行動力を信じて、前例のないことに挑戦し続けることが成功への道です。", "recommended_style": "チャレンジ企画、最新ガジェットレビュー"},
+    "Practical Entertainer": {"name": "実践的エンターテイナー", "icon": "🎬", "compass": "視聴者が求めるものを的確に捉え、高いクオリティで提供し続ける外向的な実践家。安定した面白さが、多くのファンを惹きつけます。", "focus_area": "商品紹介、視聴者参加型企画など、需要が明確で再現性の高いエンタメコンテンツ制作。", "selective_focus": "奇抜なアイデアを追うよりも、定番のフォーマットを高いレベルで実行することに集中しましょう。", "recommended_style": "商品紹介、視聴者参加型企画"},
+    "Visionary Leader": {"name": "ビジョナリー・リーダー", "icon": "🚀", "compass": "未来のビジョンを掲げ、チームを率いて大きなプロジェクトを動かす外向的な戦略家。あなたのリーダーシップが、不可能を可能にします。", "focus_area": "大規模コラボの主宰、プロダクト開発、事業展開を見据えたチャンネル戦略の設計と実行。", "selective_focus": "一人でのコンテンツ制作よりも、チームを組成し、大きなビジョンを実現するためのマネジメントに集中すべきです。", "recommended_style": "大規模コラボ、プロダクト開発、事業展開"},
+    "Community Organizer": {"name": "コミュニティ・オーガナイザー", "icon": "🎉", "compass": "人と人をつなぎ、活気あるコミュニティを形成・運営する外向的な戦略家。あなたの求心力が、熱狂的なファンベースを築きます。", "focus_area": "オンラインサロン運営、イベント主催、ファンコミュニティの活性化など、人と繋がる戦略。", "selective_focus": "コンテンツの質を追求するだけでなく、視聴者同士が交流できる「場」作りに力を入れると成功します。", "recommended_style": "オンラインサロン、イベント主催"},
+    "Passionate Evangelist": {"name": "情熱の伝道師", "icon": "🔥", "compass": "好きなモノやコトへの愛を熱く語り、その魅力をファンに伝染させる外向的なサポーター。あなたの情熱が、視聴者の心を動かします。", "focus_area": "趣味特化型チャンネル（ゲーム実況、アニメ考察）、ファンとの交流がメインのライブ配信。", "selective_focus": "客観的なレビューよりも、あなたの「好き」という主観的な熱量を前面に出すことが最大の武器です。", "recommended_style": "趣味特化チャンネル、ライブ配信"},
+    "Team Captain": {"name": "チームの司令塔", "icon": "🏆", "compass": "チーム全体の目標達成にコミットし、メンバーの能力を最大限に引き出す外向的なマネージャー。あなたの指揮が、チームを勝利に導きます。", "focus_area": "複数人でのチャンネル運営、MCNのマネジメントなど、チームを率いて成果を出す役割。", "selective_focus": "プレイヤーとして活躍するよりも、チームメンバーが輝ける環境を整える監督役に徹すると真価を発揮します。", "recommended_style": "複数人チャンネル運営、MCNマネジメント"}
+}
+SUB_CORE_DATA = {
+    "The Planner": {"name": "プランナータイプ", "desc": "計画性に優れ、目標達成までの道のりを着実に実行します。"}, "The Analyst": {"name": "アナリストタイプ", "desc": "データと論理を重視し、客観的な事実から最適解を導き出します。"}, "The Harmonizer": {"name": "ハーモナイザータイプ", "desc": "共感力が高く、チームやコミュニティに一体感をもたらします。"}, "The Accelerator": {"name": "アクセラレータータイプ", "desc": "行動力とスピードを重視し、実践と改善を繰り返しながら前進します。"}, "The Deep-Diver": {"name": "ディープダイバータイプ", "desc": "探求心が強く、物事の本質を深く掘り下げて専門性を武器にします。"}
 }
 
-# YouTube戦略テンプレート
-YOUTUBE_STRATEGIES = {
-    "INTJ": {
-        "genre": "教育・解説系、戦略分析、投資・ビジネス解説",
-        "direction": "深い分析と独自の視点を活かした長期的な価値を提供するコンテンツ。データに基づいた説得力のある解説動画。",
-        "success_tips": "専門性を高め、ニッチな分野でNo.1を目指す。計画的な動画シリーズで体系的な知識を提供しましょう。"
-    },
-    "INTP": {
-        "genre": "科学・技術解説、哲学・思想、プログラミング・IT",
-        "direction": "複雑なテーマをわかりやすく解説する知的好奇心をくすぐるコンテンツ。理論と実践のバランスが鍵。",
-        "success_tips": "マニアックな深掘りコンテンツで熱狂的なファンを獲得。好奇心の赴くままに幅広いテーマを扱いましょう。"
-    },
-    "ENTJ": {
-        "genre": "ビジネス・起業、リーダーシップ、自己啓発",
-        "direction": "目標達成や成功法則を力強く語るモチベーショナルコンテンツ。視聴者を行動に駆り立てる動画作り。",
-        "success_tips": "強いメッセージ性とビジョンを打ち出す。成功事例や実践的なステップを提示してエンゲージメントを高めましょう。"
-    },
-    "ENTP": {
-        "genre": "エンタメ・バラエティ、時事ネタ解説、チャレンジ企画",
-        "direction": "斬新なアイデアと即興性を活かしたバラエティ豊かなコンテンツ。議論や討論形式も効果的。",
-        "success_tips": "トレンドに敏感に反応し、常に新しい企画を試す。視聴者参加型の企画でコミュニティを活性化しましょう。"
-    },
-    "INFJ": {
-        "genre": "ライフスタイル・価値観、メンタルヘルス、スピリチュアル",
-        "direction": "深い共感と洞察を込めた心に響くメッセージ。人生や社会についての意味深いコンテンツ。",
-        "success_tips": "ストーリーテリングを活用し、視聴者の人生に寄り添う動画を作る。長期的な信頼関係を築きましょう。"
-    },
-    "INFP": {
-        "genre": "クリエイティブ・アート、ライフログ、ストーリーテリング",
-        "direction": "個性的な世界観と感性を表現するオリジナルコンテンツ。美しい映像と音楽でブランドを構築。",
-        "success_tips": "自分らしさを貫き、ニッチなファン層を大切にする。創造的な表現で独自のポジションを確立しましょう。"
-    },
-    "ENFJ": {
-        "genre": "コミュニティ運営、教育・インスパイア、人間関係",
-        "direction": "人を繋ぎ、ポジティブな影響を与えるコンテンツ。視聴者との対話を重視したエンゲージメント重視型。",
-        "success_tips": "ライブ配信やQ&Aで視聴者と密なコミュニケーションを。共感を呼ぶストーリーで感動を提供しましょう。"
-    },
-    "ENFP": {
-        "genre": "ライフスタイル・Vlog、旅行・冒険、多彩なエンタメ",
-        "direction": "エネルギッシュで多様なコンテンツ。情熱と好奇心が視聴者を引き込む。",
-        "success_tips": "複数のテーマを組み合わせたバラエティ豊かなチャンネル運営。視聴者を巻き込む参加型企画を増やしましょう。"
-    },
-    "ISTJ": {
-        "genre": "How-to・チュートリアル、レビュー、実用情報",
-        "direction": "正確で詳細な情報提供。信頼性の高いレビューや手順解説で視聴者の問題を解決。",
-        "success_tips": "継続的な投稿スケジュールを守り、信頼を積み重ねる。SEOを意識した検索に強いコンテンツ作りを心がけましょう。"
-    },
-    "ISFJ": {
-        "genre": "料理・レシピ、育児・家事、お悩み相談",
-        "direction": "視聴者に寄り添う温かいコンテンツ。実用的で親しみやすい動画作り。",
-        "success_tips": "視聴者のコメントに丁寧に対応し、コミュニティを育てる。日常の工夫やライフハックで共感を得ましょう。"
-    },
-    "ESTJ": {
-        "genre": "ビジネス効率化、プロジェクト管理、実践的スキル",
-        "direction": "効率性と実用性を重視した実践的コンテンツ。明確な成果を示す動画作り。",
-        "success_tips": "データや実績を提示して説得力を高める。体系的な学習シリーズで価値を提供しましょう。"
-    },
-    "ESFJ": {
-        "genre": "ライフスタイル・交流、イベント・レポート、トレンド紹介",
-        "direction": "社交的で親しみやすいコンテンツ。視聴者と一緒に楽しむスタイル。",
-        "success_tips": "視聴者参加型企画やコラボを積極的に。明るく前向きなトーンでファンを増やしましょう。"
-    },
-    "ISTP": {
-        "genre": "DIY・工作、メカニック・技術、ガジェットレビュー",
-        "direction": "実践的な技術やスキルを披露するコンテンツ。手を動かす過程を見せる動画。",
-        "success_tips": "専門技術を活かしたHow-toで差別化。視覚的にわかりやすい編集でファンを獲得しましょう。"
-    },
-    "ISFP": {
-        "genre": "アート・クラフト、音楽・パフォーマンス、自然・風景",
-        "direction": "芸術的センスを活かした美しいコンテンツ。感性に訴える映像作り。",
-        "success_tips": "ビジュアルの美しさにこだわる。創作過程を共有してファンとの繋がりを深めましょう。"
-    },
-    "ESTP": {
-        "genre": "スポーツ・アクション、チャレンジ企画、時事ネタ即応",
-        "direction": "ダイナミックで刺激的なコンテンツ。トレンドに即座に反応する機動力。",
-        "success_tips": "話題性のある企画で注目を集める。スピード感とエンタメ性で視聴者を飽きさせない工夫を。"
-    },
-    "ESFP": {
-        "genre": "エンターテイメント全般、リアクション動画、ゲーム実況",
-        "direction": "陽気で楽しい雰囲気のコンテンツ。視聴者を笑顔にする動画作り。",
-        "success_tips": "エンタメ性を最大限に発揮。視聴者との距離感を近づけ、一緒に楽しむスタイルで人気を獲得しましょう。"
+# --- 高精度診断ロジック ---
+def calculate_creator_personality_advanced(answers, questions_data, logic_data):
+    """回答とロジック定義に基づき、10次元スコアとタイプを計算する"""
+    scores = {
+        "Openness": 0, "Conscientiousness": 0, "Extraversion": 0, "Agreeableness": 0,
+        "StressTolerance": 0, "InformationStyle": 0, "DecisionMaking": 0,
+        "MotivationSource": 0, "ValuePursuit": 0, "WorkStyle": 0
     }
-}
+    
+    for i, answer in enumerate(answers):
+        question = questions_data['questions'][i]
+        dimension = question['dimension']
+        score = answer - 3
+        
+        if question['direction'] == '+':
+            scores[dimension] += score
+        else:
+            scores[dimension] -= score
 
-# 総合評価テンプレート（メリデメ含む5行要約）
-OVERALL_SUMMARIES = {
-    "INTJ": """あなたは戦略的思考と長期的視点に優れた「戦略家」タイプです。専門性の高いコンテンツで確実にファンを獲得できる一方、完璧主義が行動を遅らせる可能性があります。計画的なアプローチは強みですが、柔軟性も意識することで更に成長できます。ニッチ分野での深い解説は競合が少なく、収益化しやすい特徴があります。まずは完璧を求めず、小さく始めて改善を重ねる姿勢が成功への鍵となるでしょう。""",
+    # --- メインコアの決定ロジック ---
+    matched_cores = []
+    for core_rule in logic_data['main_cores']:
+        is_match = True
+        if 'all' in core_rule['conditions']:
+            for condition in core_rule['conditions']['all']:
+                dim, op, val = condition['dimension'], condition['operator'], condition['value']
+                if op == '>' and not scores[dim] > val: is_match = False; break
+                if op == '<' and not scores[dim] < val: is_match = False; break
+                if op == '>=' and not scores[dim] >= val: is_match = False; break
+                if op == '<=' and not scores[dim] <= val: is_match = False; break
+        if is_match:
+            matched_cores.append(core_rule)
     
-    "INTP": """あなたは知的好奇心と分析力に優れた「思索家」タイプです。複雑なテーマを深く掘り下げるコンテンツで熱狂的なファンを獲得できますが、完璧主義やこだわりが投稿頻度を下げるリスクがあります。独自の視点は大きな強みですが、視聴者目線でのわかりやすさも意識しましょう。マニアック過ぎないバランスが取れれば、高単価の専門分野で安定収益が期待できます。興味の赴くままに多様なテーマを扱える柔軟性も武器になります。""",
-    
-    "ENTJ": """あなたはリーダーシップと目標達成力に優れた「指揮官」タイプです。強いメッセージ性で多くの視聴者を惹きつけられる一方、主張が強すぎるとアンチを生む可能性もあります。ビジネス系コンテンツは収益性が高く、企業案件も獲得しやすい特徴があります。実績や成功体験を示すことで説得力が増し、信頼を築けます。ただし、視聴者との双方向コミュニケーションも意識することで、さらに強固なコミュニティを形成できるでしょう。""",
-    
-    "ENTP": """あなたは創造性と即興力に優れた「発明家」タイプです。トレンドに敏感で斬新な企画を次々生み出せる強みがある一方、継続性に課題を感じることもあります。バラエティ豊かなコンテンツは幅広い層にアプローチできますが、チャンネルの方向性が定まりにくいリスクもあります。議論や討論形式は高エンゲージメントを生み、熱心なファンを獲得しやすい特徴があります。好奇心を武器に、複数の収益モデルを組み合わせることで安定した成功が期待できます。""",
-    
-    "INFJ": """あなたは洞察力と共感力に優れた「提唱者」タイプです。深いメッセージで視聴者の心に響くコンテンツを作れる一方、完璧主義や理想の高さが投稿を遅らせる可能性があります。ストーリーテリングの才能は大きな武器で、熱心なコミュニティを形成しやすい特徴があります。ライフスタイルやメンタルヘルス分野は需要が高く、長期的な信頼関係で安定収益が見込めます。ただし、自己開示とプライバシーのバランスを保つことも重要です。""",
-    
-    "INFP": """あなたは創造性と独自性に優れた「仲介者」タイプです。個性的な世界観で唯一無二のコンテンツを作れる強みがある一方、批判への敏感さが活動の妨げになることもあります。芸術的センスとオリジナリティは熱狂的なファンを獲得しやすく、グッズ販売やクリエイター案件との相性も抜群です。ニッチな分野で確固たるポジションを築けば、競合が少なく収益化しやすい環境を作れます。自分らしさを貫く勇気が、最大の成功要因となるでしょう。""",
-    
-    "ENFJ": """あなたはカリスマ性とコミュニティ形成力に優れた「主人公」タイプです。人を惹きつける魅力で強固なファンベースを築ける一方、他者への配慮が過度になりストレスを感じることもあります。エンゲージメント重視のスタイルは高い視聴者満足度を生み、メンバーシップやライブ配信での収益化に強みがあります。教育やインスパイア系コンテンツは需要が安定しており、長期的な成功が期待できます。視聴者との対話を楽しみながら、自分のペースを保つことも大切です。""",
-    
-    "ENFP": """あなたはエネルギーと情熱に溢れた「広報運動家」タイプです。多様なコンテンツで幅広い視聴者を獲得できる強みがある一方、飽きやすさや計画性の欠如が課題になることもあります。バラエティ豊かなアプローチは複数の収益源を確保しやすく、柔軟な戦略展開が可能です。視聴者参加型企画は高いエンゲージメントを生み、コミュニティが活性化しやすい特徴があります。好奇心を活かしつつ、コアとなるテーマを持つことで、さらに安定した成長が見込めます。""",
-    
-    "ISTJ": """あなたは信頼性と継続力に優れた「管理者」タイプです。堅実な投稿スケジュールと質の高いコンテンツで確実にファンを増やせる一方、柔軟性や即興性に課題を感じることもあります。How-toやレビュー系は検索流入が多く、長期的に安定した視聴数が見込めます。SEO最適化との相性が良く、広告収益を着実に積み上げられる特徴があります。信頼の積み重ねは大きな武器ですが、時にはトレンドへの対応も意識することで、さらなる成長が期待できます。""",
-    
-    "ISFJ": """あなたは思いやりと丁寧さに優れた「擁護者」タイプです。視聴者に寄り添う温かいコンテンツで信頼を築ける一方、自己主張の弱さが成長を遅らせる可能性もあります。料理や育児など実用系コンテンツは需要が安定しており、長期的なファン獲得に適しています。視聴者との丁寧なコミュニケーションは高い満足度を生み、口コミでの拡散も期待できます。ただし、自分の意見や個性も積極的に出すことで、さらに魅力的なチャンネルになるでしょう。""",
-    
-    "ESTJ": """あなたは組織力と実行力に優れた「幹部」タイプです。効率的な運営と明確な成果提示で確実にチャンネルを成長させられる一方、柔軟性の欠如や厳格さが視聴者を遠ざけることもあります。ビジネス効率化や実践的スキル系コンテンツは収益性が高く、企業案件も獲得しやすい特徴があります。体系的な学習シリーズは高い価値を提供し、リピーターを増やしやすい強みがあります。データ重視のアプローチは説得力抜群ですが、時には感情や共感も意識するとバランスが取れます。""",
-    
-    "ESFJ": """あなたは社交性と協調性に優れた「領事官」タイプです。親しみやすいコンテンツで幅広い層にアプローチできる一方、批判への敏感さや他者依存が課題になることもあります。視聴者参加型企画やコラボは高いエンゲージメントを生み、コミュニティが活性化しやすい特徴があります。トレンド紹介やイベントレポートは需要が高く、広告収益と企業案件の両方を狙いやすい強みがあります。明るく前向きな姿勢は視聴者に元気を与え、長期的なファン獲得に繋がります。""",
-    
-    "ISTP": """あなたは実践力と技術力に優れた「巨匠」タイプです。専門的なHow-toコンテンツで確固たるポジションを築ける一方、感情表現や視聴者との交流が苦手なこともあります。DIYやメカニック系は競合が少なく、高単価の企業案件を獲得しやすい特徴があります。手を動かす過程を見せる動画は高い満足度を生み、熱心なファンを獲得しやすい強みがあります。専門性は大きな武器ですが、わかりやすい説明と視覚的な編集を意識することで、さらに多くの視聴者にリーチできます。""",
-    
-    "ISFP": """あなたは芸術性と感性に優れた「冒険家」タイプです。美しいビジュアルと独自の世界観で視聴者を魅了できる一方、自己主張の弱さや計画性の欠如が課題になることもあります。アートやクラフト系コンテンツはクリエイター案件との相性が抜群で、グッズ販売などの収益化手段も豊富です。創作過程の共有は高いエンゲージメントを生み、熱心なコミュニティを形成しやすい特徴があります。自分らしさを大切にしながら、定期的な投稿を心がけることで、安定した成長が見込めます。""",
-    
-    "ESTP": """あなたは行動力と即応力に優れた「起業家」タイプです。トレンドに即座に反応し話題を集められる強みがある一方、計画性の欠如や飽きやすさが課題になることもあります。スポーツやチャレンジ企画は高い注目を集めやすく、短期間での急成長が期待できます。ダイナミックなコンテンツは広告収益とスポンサー案件の両方を狙いやすい特徴があります。スピード感は武器ですが、チャンネルの方向性や継続性も意識することで、さらに安定した成功を掴めるでしょう。""",
-    
-    "ESFP": """あなたはエンタメ性と明るさに優れた「エンターテイナー」タイプです。視聴者を笑顔にする才能で多くのファンを獲得できる一方、計画性の欠如や感情的な投稿が課題になることもあります。エンタメ系コンテンツは需要が非常に高く、広告収益とスポンサー案件の両方を狙いやすい強みがあります。視聴者との距離が近いスタイルは高いエンゲージメントを生み、コミュニティが活性化しやすい特徴があります。楽しむ姿勢を保ちつつ、戦略的な視点も持つことで、更なる飛躍が期待できます。"""
-}
+    if matched_cores:
+        # 優先度が最も高いものを選択
+        matched_cores.sort(key=lambda x: x['priority'], reverse=True)
+        main_core = matched_cores[0]['type']
+    else:
+        # 一致するものがなければフォールバック
+        main_core = logic_data['fallback_main_core']
 
+    # --- サブコアの決定ロジック ---
+    sub_core_scores = {}
+    for sub_core, details in logic_data['sub_cores'].items():
+        total_score = 0
+        for dim, weight in details['scores'].items():
+            total_score += scores[dim] * weight
+        sub_core_scores[sub_core] = total_score
+    
+    sub_core = max(sub_core_scores, key=sub_core_scores.get)
+
+    return main_core, sub_core, scores
+
+
+# --- APIエンドポイント ---
 @app.route('/api/questions', methods=['GET'])
 def get_questions():
-    """MBTI質問データを返す"""
     return jsonify(QUESTIONS_DATA)
 
 @app.route('/api/start', methods=['POST'])
 def start_test():
-    """新しいテストセッションを開始"""
     user_id = str(uuid.uuid4())
-    return jsonify({
-        'user_id': user_id,
-        'started_at': datetime.now().isoformat()
-    })
+    return jsonify({'user_id': user_id, 'started_at': datetime.now().isoformat()})
 
 @app.route('/api/submit', methods=['POST'])
 def submit_answers():
-    """回答を保存してMBTI結果を計算"""
     data = request.json
     user_id = data.get('user_id')
     answers = data.get('answers')
@@ -184,84 +115,244 @@ def submit_answers():
     if not user_id or not answers or len(answers) != 20:
         return jsonify({'error': '無効なデータ'}), 400
     
-    # 回答を保存
     save_response(user_id, answers)
     
-    # MBTI結果計算
-    mbti_type, scores = calculate_mbti_result(answers, QUESTIONS_DATA)
+    main_core, sub_core, scores = calculate_creator_personality_advanced(answers, QUESTIONS_DATA, TYPE_LOGIC)
     
-    # 動物タイプとYouTube戦略を取得
-    animal_data = ANIMAL_TYPES.get(mbti_type, ANIMAL_TYPES["INFP"])
-    youtube_strategy = YOUTUBE_STRATEGIES.get(mbti_type, YOUTUBE_STRATEGIES["INFP"])
-    overall_summary = OVERALL_SUMMARIES.get(mbti_type, OVERALL_SUMMARIES["INFP"])
+    main_core_info = TYPE_DETAILS[main_core]
+    sub_core_info = SUB_CORE_DATA[sub_core]
+
+    motivation_type = "内発的動機づけ（探求型）" if scores['MotivationSource'] > 0 else "外発的動機づけ（達成型）"
+    motivation_guide = "あなたの情熱は、自分の内側から湧き上がる「知りたい」「面白い」という気持ちから生まれます。短期的な成果よりも、長期的に探求できるテーマを見つけることが成功の鍵です。" if scores['MotivationSource'] > 0 else "あなたの情熱は、目に見える「成果」によって燃え上がります。具体的で測定可能な短期目標を積み重ねていくアプローチが最適です。"
+
+    radar_scores = {k: round(((v + 4) / 8) * 10, 1) for k, v in scores.items()}
     
-    # レーダーチャート用スコア正規化（0-10スケール）
-    max_score = max(abs(v) for v in scores.values()) or 1
-    radar_scores = {k: round((abs(v) / max_score) * 10, 1) for k, v in scores.items()}
-    
-    # トップ3の強みを抽出（スコアが高い順）
     sorted_scores = sorted(scores.items(), key=lambda x: abs(x[1]), reverse=True)
-    strength_labels = {
-        'E': '社交性・外向性', 'I': '内省性・独立性',
-        'S': '現実主義・実用性', 'N': '想像力・直感力',
-        'T': '論理性・分析力', 'F': '共感力・調和性',
-        'J': '計画性・組織力', 'P': '柔軟性・適応力'
-    }
+    strength_labels = {'Openness': '開放性・創造力', 'Conscientiousness': '誠実性・計画力', 'Extraversion': '外向性・社交性', 'Agreeableness': '協調性・共感力', 'StressTolerance': 'ストレス耐性・冷静沈着', 'InformationStyle': '情報処理スタイル', 'DecisionMaking': '意思決定スタイル', 'MotivationSource': 'モチベーション源泉', 'ValuePursuit': '価値追求スタイル', 'WorkStyle': '作業スタイル'}
     top_strengths = [strength_labels[key] for key, value in sorted_scores[:3]]
-    
+
     return jsonify({
         'user_id': user_id,
-        'animal_name': animal_data['name'],
-        'animal_icon': animal_data['icon'],
-        'animal_description': animal_data['description'],
+        'animal_name': f"{main_core_info['name']} - {sub_core_info['name']}",
+        'animal_icon': main_core_info['icon'],
+        'animal_description': f"{main_core_info['compass']} {sub_core_info['desc']}",
         'top_strengths': top_strengths,
-        'youtube_strategy': youtube_strategy,
-        'overall_summary': overall_summary,
+        'youtube_strategy': {"genre": main_core_info['recommended_style'], "direction": main_core_info['focus_area'], "success_tips": main_core_info['selective_focus']},
+        'overall_summary': f"【モチベーションの源泉と指針】\nタイプ: {motivation_type}\n\n{motivation_guide}",
         'radar_scores': radar_scores,
         'completed_at': datetime.now().isoformat()
     })
 
 @app.route('/api/pdf/<user_id>', methods=['GET'])
 def download_pdf(user_id):
-    """PDF診断レポートを生成してダウンロード"""
     responses = get_all_responses()
     user_data = next((r for r in responses if r['user_id'] == user_id), None)
     
     if not user_data:
         return jsonify({'error': 'ユーザーが見つかりません'}), 404
     
-    # MBTI結果再計算
-    mbti_type, scores = calculate_mbti_result(user_data['answers'], QUESTIONS_DATA)
-    animal_data = ANIMAL_TYPES.get(mbti_type, ANIMAL_TYPES["INFP"])
-    youtube_strategy = YOUTUBE_STRATEGIES.get(mbti_type, YOUTUBE_STRATEGIES["INFP"])
-    overall_summary = OVERALL_SUMMARIES.get(mbti_type, OVERALL_SUMMARIES["INFP"])
+    main_core, sub_core, scores = calculate_creator_personality_advanced(user_data['answers'], QUESTIONS_DATA, TYPE_LOGIC)
+    main_core_info = TYPE_DETAILS[main_core]
+    sub_core_info = SUB_CORE_DATA[sub_core]
     
-    # レーダーチャート用スコア
-    max_score = max(abs(v) for v in scores.values()) or 1
-    radar_scores = {k: round((abs(v) / max_score) * 10, 1) for k, v in scores.items()}
-    
+    motivation_type = "内発的動機づけ（探求型）" if scores['MotivationSource'] > 0 else "外発的動機づけ（達成型）"
+    motivation_guide = "あなたの情熱は、自分の内側から湧き上がる「知りたい」「面白い」という気持ちから生まれます。短期的な成果よりも、長期的に探求できるテーマを見つけることが成功の鍵です。" if scores['MotivationSource'] > 0 else "あなたの情熱は、目に見える「成果」によって燃え上がります。具体的で測定可能な短期目標を積み重ねていくアプローチが最適です。"
+    radar_scores = {k: round(((v + 4) / 8) * 10, 1) for k, v in scores.items()}
+
     result = {
-        'animal_name': animal_data['name'],
-        'animal_icon': animal_data['icon'],
-        'animal_description': animal_data['description'],
-        'youtube_strategy': youtube_strategy,
-        'overall_summary': overall_summary,
+        'animal_name': f"{main_core_info['name']} - {sub_core_info['name']}",
+        'animal_icon': main_core_info['icon'],
+        'animal_description': f"{main_core_info['compass']} {sub_core_info['desc']}",
+        'youtube_strategy': {"genre": main_core_info['recommended_style'], "direction": main_core_info['focus_area'], "success_tips": main_core_info['selective_focus']},
+        'overall_summary': f"【モチベーションの源泉と指針】\nタイプ: {motivation_type}\n\n{motivation_guide}",
         'radar_scores': radar_scores
     }
     
-    # PDF生成
     pdf_buffer = generate_pdf_report(user_id, result)
     
-    return send_file(
-        pdf_buffer,
-        mimetype='application/pdf',
-        as_attachment=True,
-        download_name=f'youtube_strength_report_{user_id[:8]}.pdf'
-    )
+    return send_file(pdf_buffer, mimetype='application/pdf', as_attachment=True, download_name=f'youtube_strength_report_{user_id[:8]}.pdf')
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
-    """ヘルスチェック"""
+    return jsonify({'status': 'ok'})
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5000)# backend/app.py - 高精度診断ロジック対応版
+from flask import Flask, jsonify, request, send_file
+from flask_cors import CORS
+import json
+import uuid
+from datetime import datetime
+import os
+from models_mbti import save_response, get_all_responses
+from pdf_generator_mbti_improved import generate_pdf_report
+
+app = Flask(__name__)
+CORS(app)
+
+# --- ファイルパスの定義 ---
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+QUESTIONS_PATH = os.path.join(BASE_DIR, '..', 'data', 'mbti_questions.json')
+TYPE_LOGIC_PATH = os.path.join(BASE_DIR, '..', 'data', 'type_logic.json')
+
+# --- 設定ファイルの読み込み ---
+with open(QUESTIONS_PATH, 'r', encoding='utf-8') as f:
+    QUESTIONS_DATA = json.load(f)
+with open(TYPE_LOGIC_PATH, 'r', encoding='utf-8') as f:
+    TYPE_LOGIC = json.load(f)
+
+# --- 診断タイプの詳細データ ---
+# (app.py内に保持することで、ロジックと表示内容を分離)
+TYPE_DETAILS = {
+    "Solitary Artist": {"name": "孤高のアーティスト", "icon": "🎨", "compass": "独創的な世界観を持ち、一人で黙々と作品制作に打ち込む内向的な革新者。あなたの深い内省から生まれるユニークな視点が、最大の武器です。", "focus_area": "作り込まれた映像作品、専門性の高い解説、アート系Vlogなど、独自の世界観を表現するコンテンツ制作。", "selective_focus": "大人数のコラボや頻繁なライブ配信よりも、作品のクオリティを追求することに時間を使いましょう。", "recommended_style": "映像作品、専門解説、アート系Vlog"},
+    "Trend Hacker": {"name": "トレンドハッカー", "icon": "📈", "compass": "流行を冷静に分析し、効率的に成果を出す方法を模索する内向的な効率家。データに基づいた戦略で、最短ルートを切り開きます。", "focus_area": "切り抜き動画、データに基づいた考察、効率化ノウハウなど、需要が証明されているフォーマットのコンテンツ制作。", "selective_focus": "ゼロから企画を生み出すよりも、成功事例を分析・応用することに集中するのが成功の鍵です。", "recommended_style": "切り抜き、データ考察、効率化ノウハウ"},
+    "Knowledge Seeker": {"name": "知の探求者", "icon": "📚", "compass": "深いリサーチと論理的思考で戦略を練り上げる、内向的なイノベーター。あなたの知的好奇心が、質の高いコンテンツの源泉です。", "focus_area": "複雑なテーマの長尺解説、教育系コンテンツ、書評など、深い知識を要するジャンルでの戦略設計。", "selective_focus": "表面的なトレンド追従よりも、一つのテーマを深く掘り下げ、専門家としての地位を築くことに集中しましょう。", "recommended_style": "長尺解説、教育コンテンツ、書評"},
+    "System Architect": {"name": "再現性の巨匠", "icon": "⚙️", "compass": "成功法則をシステム化し、安定したチャンネル成長を設計する内向的な戦略家。再現性のある仕組み作りで、盤石な基盤を築きます。", "focus_area": "チャンネル運営ノウハウ、再現性の高いチュートリアル、AI動画の量産など、運営をシステム化する戦略。", "selective_focus": "単発のバズを狙うより、継続的に成果を出せる仕組み作りにリソースを投下することが重要です。", "recommended_style": "運営ノウハウ、チュートリアル、AI活用"},
+    "Empathetic Storyteller": {"name": "共感のストーリーテラー", "icon": "🖋️", "compass": "人の心に寄り添い、丁寧なコミュニケーションでファンを育てる内向的なサポーター。あなたの共感力が、強いコミュニティを形成します。", "focus_area": "丁寧な暮らしVlog、視聴者の悩みに答えるコンテンツ、コミュニティ運営など、ファンとの深い関係構築。", "selective_focus": "過度な自己主張よりも、視聴者の心に寄り添うストーリーを語ることで、あなたの価値は最大化されます。", "recommended_style": "暮らしVlog、お悩み相談、コミュニティ運営"},
+    "Supportive Producer": {"name": "縁の下のプロデューサー", "icon": "🤝", "compass": "他のクリエイターやチームを後方から支え、成功に導く内向的なマネージャー。あなたのサポートが、チームの力を最大化します。", "focus_area": "チーム運営、編集代行、裏方としてのチャンネルサポートなど、他者の成功を支援する役割。", "selective_focus": "自分が表舞台に立つことよりも、チーム全体の成功をデザインすることに集中すると輝きます。", "recommended_style": "チーム運営、編集代行、裏方サポート"},
+    "Spotlight Pioneer": {"name": "スポットライトの開拓者", "icon": "🌟", "compass": "常に新しい企画に挑戦し、人々を惹きつけるカリスマを持つ外向的な革新者。あなたの行動力が、新たなトレンドを生み出します。", "focus_area": "顔出しでのチャレンジ企画、最新ガジェットレビューなど、自分が主役となるエンタメコンテンツ制作。", "selective_focus": "緻密なデータ分析よりも、直感と行動力を信じて、前例のないことに挑戦し続けることが成功への道です。", "recommended_style": "チャレンジ企画、最新ガジェットレビュー"},
+    "Practical Entertainer": {"name": "実践的エンターテイナー", "icon": "🎬", "compass": "視聴者が求めるものを的確に捉え、高いクオリティで提供し続ける外向的な実践家。安定した面白さが、多くのファンを惹きつけます。", "focus_area": "商品紹介、視聴者参加型企画など、需要が明確で再現性の高いエンタメコンテンツ制作。", "selective_focus": "奇抜なアイデアを追うよりも、定番のフォーマットを高いレベルで実行することに集中しましょう。", "recommended_style": "商品紹介、視聴者参加型企画"},
+    "Visionary Leader": {"name": "ビジョナリー・リーダー", "icon": "🚀", "compass": "未来のビジョンを掲げ、チームを率いて大きなプロジェクトを動かす外向的な戦略家。あなたのリーダーシップが、不可能を可能にします。", "focus_area": "大規模コラボの主宰、プロダクト開発、事業展開を見据えたチャンネル戦略の設計と実行。", "selective_focus": "一人でのコンテンツ制作よりも、チームを組成し、大きなビジョンを実現するためのマネジメントに集中すべきです。", "recommended_style": "大規模コラボ、プロダクト開発、事業展開"},
+    "Community Organizer": {"name": "コミュニティ・オーガナイザー", "icon": "🎉", "compass": "人と人をつなぎ、活気あるコミュニティを形成・運営する外向的な戦略家。あなたの求心力が、熱狂的なファンベースを築きます。", "focus_area": "オンラインサロン運営、イベント主催、ファンコミュニティの活性化など、人と繋がる戦略。", "selective_focus": "コンテンツの質を追求するだけでなく、視聴者同士が交流できる「場」作りに力を入れると成功します。", "recommended_style": "オンラインサロン、イベント主催"},
+    "Passionate Evangelist": {"name": "情熱の伝道師", "icon": "🔥", "compass": "好きなモノやコトへの愛を熱く語り、その魅力をファンに伝染させる外向的なサポーター。あなたの情熱が、視聴者の心を動かします。", "focus_area": "趣味特化型チャンネル（ゲーム実況、アニメ考察）、ファンとの交流がメインのライブ配信。", "selective_focus": "客観的なレビューよりも、あなたの「好き」という主観的な熱量を前面に出すことが最大の武器です。", "recommended_style": "趣味特化チャンネル、ライブ配信"},
+    "Team Captain": {"name": "チームの司令塔", "icon": "🏆", "compass": "チーム全体の目標達成にコミットし、メンバーの能力を最大限に引き出す外向的なマネージャー。あなたの指揮が、チームを勝利に導きます。", "focus_area": "複数人でのチャンネル運営、MCNのマネジメントなど、チームを率いて成果を出す役割。", "selective_focus": "プレイヤーとして活躍するよりも、チームメンバーが輝ける環境を整える監督役に徹すると真価を発揮します。", "recommended_style": "複数人チャンネル運営、MCNマネジメント"}
+}
+SUB_CORE_DATA = {
+    "The Planner": {"name": "プランナータイプ", "desc": "計画性に優れ、目標達成までの道のりを着実に実行します。"}, "The Analyst": {"name": "アナリストタイプ", "desc": "データと論理を重視し、客観的な事実から最適解を導き出します。"}, "The Harmonizer": {"name": "ハーモナイザータイプ", "desc": "共感力が高く、チームやコミュニティに一体感をもたらします。"}, "The Accelerator": {"name": "アクセラレータータイプ", "desc": "行動力とスピードを重視し、実践と改善を繰り返しながら前進します。"}, "The Deep-Diver": {"name": "ディープダイバータイプ", "desc": "探求心が強く、物事の本質を深く掘り下げて専門性を武器にします。"}
+}
+
+# --- 高精度診断ロジック ---
+def calculate_creator_personality_advanced(answers, questions_data, logic_data):
+    """回答とロジック定義に基づき、10次元スコアとタイプを計算する"""
+    scores = {
+        "Openness": 0, "Conscientiousness": 0, "Extraversion": 0, "Agreeableness": 0,
+        "StressTolerance": 0, "InformationStyle": 0, "DecisionMaking": 0,
+        "MotivationSource": 0, "ValuePursuit": 0, "WorkStyle": 0
+    }
+    
+    for i, answer in enumerate(answers):
+        question = questions_data['questions'][i]
+        dimension = question['dimension']
+        score = answer - 3
+        
+        if question['direction'] == '+':
+            scores[dimension] += score
+        else:
+            scores[dimension] -= score
+
+    # --- メインコアの決定ロジック ---
+    matched_cores = []
+    for core_rule in logic_data['main_cores']:
+        is_match = True
+        if 'all' in core_rule['conditions']:
+            for condition in core_rule['conditions']['all']:
+                dim, op, val = condition['dimension'], condition['operator'], condition['value']
+                if op == '>' and not scores[dim] > val: is_match = False; break
+                if op == '<' and not scores[dim] < val: is_match = False; break
+                if op == '>=' and not scores[dim] >= val: is_match = False; break
+                if op == '<=' and not scores[dim] <= val: is_match = False; break
+        if is_match:
+            matched_cores.append(core_rule)
+    
+    if matched_cores:
+        # 優先度が最も高いものを選択
+        matched_cores.sort(key=lambda x: x['priority'], reverse=True)
+        main_core = matched_cores[0]['type']
+    else:
+        # 一致するものがなければフォールバック
+        main_core = logic_data['fallback_main_core']
+
+    # --- サブコアの決定ロジック ---
+    sub_core_scores = {}
+    for sub_core, details in logic_data['sub_cores'].items():
+        total_score = 0
+        for dim, weight in details['scores'].items():
+            total_score += scores[dim] * weight
+        sub_core_scores[sub_core] = total_score
+    
+    sub_core = max(sub_core_scores, key=sub_core_scores.get)
+
+    return main_core, sub_core, scores
+
+
+# --- APIエンドポイント ---
+@app.route('/api/questions', methods=['GET'])
+def get_questions():
+    return jsonify(QUESTIONS_DATA)
+
+@app.route('/api/start', methods=['POST'])
+def start_test():
+    user_id = str(uuid.uuid4())
+    return jsonify({'user_id': user_id, 'started_at': datetime.now().isoformat()})
+
+@app.route('/api/submit', methods=['POST'])
+def submit_answers():
+    data = request.json
+    user_id = data.get('user_id')
+    answers = data.get('answers')
+    
+    if not user_id or not answers or len(answers) != 20:
+        return jsonify({'error': '無効なデータ'}), 400
+    
+    save_response(user_id, answers)
+    
+    main_core, sub_core, scores = calculate_creator_personality_advanced(answers, QUESTIONS_DATA, TYPE_LOGIC)
+    
+    main_core_info = TYPE_DETAILS[main_core]
+    sub_core_info = SUB_CORE_DATA[sub_core]
+
+    motivation_type = "内発的動機づけ（探求型）" if scores['MotivationSource'] > 0 else "外発的動機づけ（達成型）"
+    motivation_guide = "あなたの情熱は、自分の内側から湧き上がる「知りたい」「面白い」という気持ちから生まれます。短期的な成果よりも、長期的に探求できるテーマを見つけることが成功の鍵です。" if scores['MotivationSource'] > 0 else "あなたの情熱は、目に見える「成果」によって燃え上がります。具体的で測定可能な短期目標を積み重ねていくアプローチが最適です。"
+
+    radar_scores = {k: round(((v + 4) / 8) * 10, 1) for k, v in scores.items()}
+    
+    sorted_scores = sorted(scores.items(), key=lambda x: abs(x[1]), reverse=True)
+    strength_labels = {'Openness': '開放性・創造力', 'Conscientiousness': '誠実性・計画力', 'Extraversion': '外向性・社交性', 'Agreeableness': '協調性・共感力', 'StressTolerance': 'ストレス耐性・冷静沈着', 'InformationStyle': '情報処理スタイル', 'DecisionMaking': '意思決定スタイル', 'MotivationSource': 'モチベーション源泉', 'ValuePursuit': '価値追求スタイル', 'WorkStyle': '作業スタイル'}
+    top_strengths = [strength_labels[key] for key, value in sorted_scores[:3]]
+
+    return jsonify({
+        'user_id': user_id,
+        'animal_name': f"{main_core_info['name']} - {sub_core_info['name']}",
+        'animal_icon': main_core_info['icon'],
+        'animal_description': f"{main_core_info['compass']} {sub_core_info['desc']}",
+        'top_strengths': top_strengths,
+        'youtube_strategy': {"genre": main_core_info['recommended_style'], "direction": main_core_info['focus_area'], "success_tips": main_core_info['selective_focus']},
+        'overall_summary': f"【モチベーションの源泉と指針】\nタイプ: {motivation_type}\n\n{motivation_guide}",
+        'radar_scores': radar_scores,
+        'completed_at': datetime.now().isoformat()
+    })
+
+@app.route('/api/pdf/<user_id>', methods=['GET'])
+def download_pdf(user_id):
+    responses = get_all_responses()
+    user_data = next((r for r in responses if r['user_id'] == user_id), None)
+    
+    if not user_data:
+        return jsonify({'error': 'ユーザーが見つかりません'}), 404
+    
+    main_core, sub_core, scores = calculate_creator_personality_advanced(user_data['answers'], QUESTIONS_DATA, TYPE_LOGIC)
+    main_core_info = TYPE_DETAILS[main_core]
+    sub_core_info = SUB_CORE_DATA[sub_core]
+    
+    motivation_type = "内発的動機づけ（探求型）" if scores['MotivationSource'] > 0 else "外発的動機づけ（達成型）"
+    motivation_guide = "あなたの情熱は、自分の内側から湧き上がる「知りたい」「面白い」という気持ちから生まれます。短期的な成果よりも、長期的に探求できるテーマを見つけることが成功の鍵です。" if scores['MotivationSource'] > 0 else "あなたの情熱は、目に見える「成果」によって燃え上がります。具体的で測定可能な短期目標を積み重ねていくアプローチが最適です。"
+    radar_scores = {k: round(((v + 4) / 8) * 10, 1) for k, v in scores.items()}
+
+    result = {
+        'animal_name': f"{main_core_info['name']} - {sub_core_info['name']}",
+        'animal_icon': main_core_info['icon'],
+        'animal_description': f"{main_core_info['compass']} {sub_core_info['desc']}",
+        'youtube_strategy': {"genre": main_core_info['recommended_style'], "direction": main_core_info['focus_area'], "success_tips": main_core_info['selective_focus']},
+        'overall_summary': f"【モチベーションの源泉と指針】\nタイプ: {motivation_type}\n\n{motivation_guide}",
+        'radar_scores': radar_scores
+    }
+    
+    pdf_buffer = generate_pdf_report(user_id, result)
+    
+    return send_file(pdf_buffer, mimetype='application/pdf', as_attachment=True, download_name=f'youtube_strength_report_{user_id[:8]}.pdf')
+
+@app.route('/api/health', methods=['GET'])
+def health_check():
     return jsonify({'status': 'ok'})
 
 if __name__ == '__main__':

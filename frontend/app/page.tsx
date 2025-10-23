@@ -275,22 +275,29 @@ export default function Home() {
     );
   }
 
-  if (completed && result) {
+if (completed && result) {
     // レーダーチャート用データ
     const radarData = {
-      labels: ['外向性(E)', '内向性(I)', '感覚(S)', '直感(N)', '思考(T)', '感情(F)', '判断(J)', '知覚(P)'],
+      // ↓↓↓ このlabelsを修正
+      labels: [
+        '開放性', '誠実性', '外向性', '協調性', 'ストレス耐性', 
+        '情報スタイル', '意思決定', 'モチベーション', '価値追求', '作業スタイル'
+      ],
       datasets: [
         {
           label: 'あなたのスコア',
+          // ↓↓↓ このdataの参照先を修正
           data: [
-            result.radar_scores?.E || 0,
-            result.radar_scores?.I || 0,
-            result.radar_scores?.S || 0,
-            result.radar_scores?.N || 0,
-            result.radar_scores?.T || 0,
-            result.radar_scores?.F || 0,
-            result.radar_scores?.J || 0,
-            result.radar_scores?.P || 0,
+            result.radar_scores?.Openness || 0,
+            result.radar_scores?.Conscientiousness || 0,
+            result.radar_scores?.Extraversion || 0,
+            result.radar_scores?.Agreeableness || 0,
+            result.radar_scores?.StressTolerance || 0,
+            result.radar_scores?.InformationStyle || 0,
+            result.radar_scores?.DecisionMaking || 0,
+            result.radar_scores?.MotivationSource || 0,
+            result.radar_scores?.ValuePursuit || 0,
+            result.radar_scores?.WorkStyle || 0,
           ],
           backgroundColor: 'rgba(239, 68, 68, 0.2)',
           borderColor: 'rgba(239, 68, 68, 1)',
@@ -298,7 +305,6 @@ export default function Home() {
         },
       ],
     };
-
     const radarOptions = {
       scales: {
         r: {
