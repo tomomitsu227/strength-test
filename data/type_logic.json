@@ -1,157 +1,18 @@
 {
   "main_cores": [
-    {
-      "type": "Visionary Leader",
-      "priority": 100,
-      "conditions": {
-        "all": [
-          { "dimension": "Extraversion", "operator": ">", "value": 2 },
-          { "dimension": "Openness", "operator": ">", "value": 1 },
-          { "dimension": "WorkStyle", "operator": "<", "value": -1 },
-          { "dimension": "ValuePursuit", "operator": ">", "value": 0 }
-        ]
-      }
-    },
-    {
-      "type": "Knowledge Seeker",
-      "priority": 95,
-      "conditions": {
-        "all": [
-          { "dimension": "Extraversion", "operator": "<", "value": -1 },
-          { "dimension": "Openness", "operator": ">", "value": 2 },
-          { "dimension": "InformationStyle", "operator": "<", "value": 0 },
-          { "dimension": "WorkStyle", "operator": ">", "value": 1 }
-        ]
-      }
-    },
-    {
-      "type": "Spotlight Pioneer",
-      "priority": 90,
-      "conditions": {
-        "all": [
-          { "dimension": "Extraversion", "operator": ">", "value": 2 },
-          { "dimension": "ValuePursuit", "operator": ">", "value": 1 },
-          { "dimension": "Conscientiousness", "operator": "<", "value": 0 }
-        ]
-      }
-    },
-    {
-      "type": "Solitary Artist",
-      "priority": 85,
-      "conditions": {
-        "all": [
-          { "dimension": "Extraversion", "operator": "<", "value": -2 },
-          { "dimension": "Openness", "operator": ">", "value": 1 },
-          { "dimension": "WorkStyle", "operator": ">", "value": 2 },
-          { "dimension": "ValuePursuit", "operator": ">", "value": 0 }
-        ]
-      }
-    },
-    {
-      "type": "Team Captain",
-      "priority": 80,
-      "conditions": {
-        "all": [
-          { "dimension": "Extraversion", "operator": ">", "value": 1 },
-          { "dimension": "Agreeableness", "operator": ">", "value": 1 },
-          { "dimension": "WorkStyle", "operator": "<", "value": -1 }
-        ]
-      }
-    },
-    {
-      "type": "System Architect",
-      "priority": 75,
-      "conditions": {
-        "all": [
-          { "dimension": "Extraversion", "operator": "<", "value": 0 },
-          { "dimension": "Conscientiousness", "operator": ">", "value": 2 },
-          { "dimension": "ValuePursuit", "operator": "<", "value": -1 },
-          { "dimension": "InformationStyle", "operator": ">", "value": 0 }
-        ]
-      }
-    },
-    {
-      "type": "Community Organizer",
-      "priority": 70,
-      "conditions": {
-        "all": [
-          { "dimension": "Extraversion", "operator": ">", "value": 2 },
-          { "dimension": "Agreeableness", "operator": ">", "value": 2 },
-          { "dimension": "ValuePursuit", "operator": "<", "value": 0 }
-        ]
-      }
-    },
-    {
-      "type": "Trend Hacker",
-      "priority": 65,
-      "conditions": {
-        "all": [
-          { "dimension": "Extraversion", "operator": "<", "value": 0 },
-          { "dimension": "ValuePursuit", "operator": "<", "value": -1 },
-          { "dimension": "InformationStyle", "operator": ">", "value": 1 }
-        ]
-      }
-    },
-    {
-      "type": "Passionate Evangelist",
-      "priority": 60,
-      "conditions": {
-        "all": [
-          { "dimension": "Extraversion", "operator": ">", "value": 1 },
-          { "dimension": "Openness", "operator": ">", "value": 1 },
-          { "dimension": "MotivationSource", "operator": ">", "value": 0 }
-        ]
-      }
-    },
-    {
-      "type": "Empathetic Storyteller",
-      "priority": 55,
-      "conditions": {
-        "all": [
-          { "dimension": "Extraversion", "operator": "<", "value": 0 },
-          { "dimension": "Agreeableness", "operator": ">", "value": 2 },
-          { "dimension": "Openness", "operator": ">", "value": 0 }
-        ]
-      }
-    },
-    {
-      "type": "Practical Entertainer",
-      "priority": 50,
-      "conditions": {
-        "all": [
-          { "dimension": "Extraversion", "operator": ">", "value": 1 },
-          { "dimension": "ValuePursuit", "operator": "<", "value": 0 }
-        ]
-      }
-    },
-    {
-      "type": "Supportive Producer",
-      "priority": 45,
-      "conditions": {
-        "all": [
-          { "dimension": "WorkStyle", "operator": "<", "value": -1 },
-          { "dimension": "Agreeableness", "operator": ">", "value": 1 },
-          { "dimension": "Extraversion", "operator": "<", "value": 1 }
-        ]
-      }
-    }
+    { "type": "Visionary Leader", "priority": 100, "conditions": { "all": [ { "dimension": "Extraversion", "operator": ">", "value": 2 }, { "dimension": "Openness", "operator": ">", "value": 2 }, { "dimension": "WorkStyle", "operator": "<", "value": 0 } ] } },
+    { "type": "Knowledge Seeker", "priority": 95, "conditions": { "all": [ { "dimension": "Extraversion", "operator": "<", "value": -2 }, { "dimension": "Openness", "operator": ">", "value": 2 }, { "dimension": "WorkStyle", "operator": ">", "value": 1 } ] } },
+    { "type": "Spotlight Pioneer", "priority": 90, "conditions": { "all": [ { "dimension": "Extraversion", "operator": ">", "value": 2 }, { "dimension": "ValuePursuit", "operator": ">", "value": 1 } ] } },
+    { "type": "Solitary Artist", "priority": 85, "conditions": { "all": [ { "dimension": "Extraversion", "operator": "<", "value": -2 }, { "dimension": "Openness", "operator": ">", "value": 1 }, { "dimension": "WorkStyle", "operator": ">", "value": 2 } ] } },
+    { "type": "Team Captain", "priority": 80, "conditions": { "all": [ { "dimension": "Extraversion", "operator": ">", "value": 1 }, { "dimension": "Agreeableness", "operator": ">", "value": 1 }, { "dimension": "WorkStyle", "operator": "<", "value": -1 } ] } },
+    { "type": "System Architect", "priority": 75, "conditions": { "all": [ { "dimension": "Extraversion", "operator": "<", "value": 0 }, { "dimension": "Conscientiousness", "operator": ">", "value": 2 }, { "dimension": "ValuePursuit", "operator": "<", "value": -1 } ] } },
+    { "type": "Community Organizer", "priority": 70, "conditions": { "all": [ { "dimension": "Extraversion", "operator": ">", "value": 2 }, { "dimension": "Agreeableness", "operator": ">", "value": 2 } ] } },
+    { "type": "Trend Hacker", "priority": 65, "conditions": { "all": [ { "dimension": "Extraversion", "operator": "<", "value": -1 }, { "dimension": "ValuePursuit", "operator": "<", "value": -1 }, { "dimension": "InformationStyle", "operator": ">", "value": 1 } ] } },
+    { "type": "Passionate Evangelist", "priority": 60, "conditions": { "all": [ { "dimension": "Extraversion", "operator": ">", "value": 1 }, { "dimension": "MotivationSource", "operator": ">", "value": 1 } ] } },
+    { "type": "Empathetic Storyteller", "priority": 55, "conditions": { "all": [ { "dimension": "Extraversion", "operator": "<", "value": -1 }, { "dimension": "Agreeableness", "operator": ">", "value": 2 } ] } },
+    { "type": "Practical Entertainer", "priority": 50, "conditions": { "all": [ { "dimension": "Extraversion", "operator": ">", "value": 1 }, { "dimension": "ValuePursuit", "operator": "<", "value": 0 } ] } },
+    { "type": "Supportive Producer", "priority": 45, "conditions": { "all": [ { "dimension": "WorkStyle", "operator": "<", "value": -1 }, { "dimension": "Agreeableness", "operator": ">", "value": 1 } ] } }
   ],
-  "sub_cores": {
-    "The Planner": {
-      "scores": { "Conscientiousness": 2, "Openness": -1 }
-    },
-    "The Analyst": {
-      "scores": { "InformationStyle": 1.5, "DecisionMaking": 1.5, "Agreeableness": -1 }
-    },
-    "The Harmonizer": {
-      "scores": { "Agreeableness": 2, "DecisionMaking": -1.5 }
-    },
-    "The Accelerator": {
-      "scores": { "Conscientiousness": -2, "Extraversion": 1 }
-    },
-    "The Deep-Diver": {
-      "scores": { "Openness": 2, "InformationStyle": -1 }
-    }
-  },
+  "sub_cores": { "The Planner": { "scores": { "Conscientiousness": 2, "Openness": -1 } }, "The Analyst": { "scores": { "InformationStyle": 1.5, "DecisionMaking": 1.5, "Agreeableness": -1 } }, "The Harmonizer": { "scores": { "Agreeableness": 2, "DecisionMaking": -1.5 } }, "The Accelerator": { "scores": { "Conscientiousness": -2, "Extraversion": 1 } }, "The Deep-Diver": { "scores": { "Openness": 2, "InformationStyle": -1 } } },
   "fallback_main_core": "Practical Entertainer"
 }
