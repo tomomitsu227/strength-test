@@ -96,7 +96,7 @@ export default function Home() {
   const currentQ = questionsData.questions[currentQuestion];
   return ( <div className="min-h-screen bg-gray-50 flex flex-col"> <div className="bg-white shadow-sm sticky top-0 z-10 p-4"> <div className="w-full bg-gray-200 rounded-full h-2.5"><motion.div className="bg-red-500 h-2.5 rounded-full" animate={{ width: `${progress}%` }} /></div> <p className="text-center text-sm text-gray-600 mt-2">{currentQuestion + 1} / 20</p> </div> <div className="flex-1 flex items-center justify-center p-4"> <AnimatePresence mode="wait"> <motion.div key={currentQuestion} initial={{ x: 300, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -300, opacity: 0 }} transition={{ duration: 0.3 }} className="w-full max-w-2xl bg-white rounded-2xl shadow-lg p-8">
     <div className="flex items-center justify-center mb-6">
-      <div className="flex items-center justify-center w-12 h-12 bg-red-500 text-white font-bold text-2xl rounded-full">{currentQuestion + 1}</div>
+      <div className="flex items-center justify-center w-12 h-12 bg-red-500 text-white font-bold text-2xl rounded-full">Q{currentQuestion + 1}</div>
       <div className="text-3xl font-bold text-gray-700 ml-3"></div>
     </div>
     <h2 className="text-2xl font-bold text-gray-800 mb-8 text-center leading-relaxed">{currentQ.q}</h2>

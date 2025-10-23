@@ -19,23 +19,9 @@ from matplotlib.patches import Circle
 import os
 
 # 日本語フォントの登録
-try:
-    # システムにインストールされている日本語フォントを使用
-    font_path = '/System/Library/Fonts/ヒラギノ角ゴシック W3.ttc'  # macOS
-    if not os.path.exists(font_path):
-        font_path = '/usr/share/fonts/truetype/fonts-japanese-gothic.ttf'  # Linux
-    if not os.path.exists(font_path):
-        font_path = 'C:\\Windows\\Fonts\\msgothic.ttc'  # Windows
-    
-    if os.path.exists(font_path):
-        pdfmetrics.registerFont(TTFont('Japanese', font_path))
-        FONT_NAME = 'Japanese'
-    else:
-        # フォールバック
-        FONT_NAME = 'Helvetica'
-except Exception as e:
-    print(f"日本語フォントの登録に失敗しました: {e}")
-    FONT_NAME = 'Helvetica'
+font_path = "ipaexg.ttf"  # backend直下
+pdfmetrics.registerFont(TTFont('IPAexGothic', font_path))
+FONT_NAME = 'IPAexGothic'
 
 # カラー定義 (Webページと同じ配色)
 PRIMARY_COLOR = colors.HexColor('#EF4444')  # 赤
@@ -251,7 +237,7 @@ def generate_pdf_report_final(user_name, data):
     # ===== あなたのユニークさ分析 =====
     data_analysis = data.get('data_analysis', {})
     if data_analysis:
-        story.append(Paragraph("あなたのユニークさ分析", heading_style))
+        story.append(Paragraph("ユニーク分析", heading_style))
         story.append(Spacer(1, 5*mm))
         
         # 回答の明確さ
