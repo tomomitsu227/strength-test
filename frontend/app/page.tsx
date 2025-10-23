@@ -16,7 +16,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000/api"
 interface Question { q: string; }
 interface QuestionsData { questions: Question[]; }
 interface ResultData {
-  user_id: string; // ★★★ 追加: userIdを結果に含める
+  user_id: string;
   type_name: string;
   icon: string;
   description: string;
@@ -71,8 +71,7 @@ export default function Home() {
       setIsTransitioning(false);
     }, 200);
   };
-
-  // ★★★ 追加：戻るボタンのロジック ★★★
+  
   const goBack = () => {
     if (currentQuestion > 0 && !isTransitioning) {
       setIsTransitioning(true);
@@ -96,7 +95,6 @@ export default function Home() {
     }
   };
   
-  // ★★★ 追加：PDFダウンロードのロジック ★★★
   const downloadPDF = () => {
     if (result && result.user_id) {
       window.open(`${API_BASE}/pdf/${result.user_id}`, '_blank');
@@ -141,15 +139,9 @@ export default function Home() {
         </div>
         <div className="mb-10"><h2 className="text-2xl font-bold text-center text-gray-800 mb-4">あなたの特性分析</h2><div className="max-w-md mx-auto"><Radar data={radarData} options={radarOptions} /></div></div>
         <div className="bg-blue-50 p-8 rounded-2xl"><h2 className="text-2xl font-bold text-gray-800 mb-4">診断結果の統括 - あなたの本質</h2><p className="text-gray-700 leading-loose whitespace-pre-line">{result.synthesis || '…'}</p></div>
-        
-        {/* ★★★ 変更点：ボタンのグループを追加 ★★★ */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center mt-10">
-          <button onClick={downloadPDF} className="bg-red-600 text-white font-bold py-3 px-8 rounded-full hover:bg-red-700 transition-transform transform hover:scale-105 shadow-lg">
-            詳細レポートをダウンロード
-          </button>
-          <button onClick={restartTest} className="bg-gray-200 text-gray-800 font-bold py-3 px-8 rounded-full hover:bg-gray-300 transition-colors">
-            もう一度診断する
-          </button>
+          <button onClick={downloadPDF} className="bg-red-600 text-white font-bold py-3 px-8 rounded-full hover:bg-red-700 transition-transform transform hover:scale-105 shadow-lg">詳細レポートをダウンロード</button>
+          <button onClick={restartTest} className="bg-gray-200 text-gray-800 font-bold py-3 px-8 rounded-full hover:bg-gray-300 transition-colors">もう一度診断する</button>
         </div>
       </motion.div></div></div>
     );
@@ -160,7 +152,11 @@ export default function Home() {
   const currentQ = questionsData.questions[currentQuestion];
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <div className="bg-white shadow-sm sticky top-0 z-10 p-4"><div className="w-full bg-gray-200 rounded-full h-2.5"><motion.div className="bg-red-500 h-2.5 rounded-full" animate={{ width: `${progress}%` }} /></div><p className="text-center text-sm text-gray-600 mt-2">{currentQuestion + 1} / 20</p></div>
+      {/* ★★★ 変更点：Q番号表示を復活 ★★★ */}
+      <div className="bg-white shadow-sm sticky top-0 z-10 p-4">
+        <div className="w-full bg-gray-200 rounded-full h-2.5"><motion.div className="bg-red-500 h-2.5 rounded-full" animate={{ width: `${progress}%` }} /></div>
+        <p className="text-center text-sm text-gray-600 mt-2">{currentQuestion + 1} / 20</p>
+      </div>
       <div className="flex-1 flex items-center justify-center p-4">
         <AnimatePresence mode="wait">
           <motion.div key={currentQuestion} initial={{ x: 300, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -300, opacity: 0 }} transition={{ duration: 0.3 }} className="w-full max-w-2xl bg-white rounded-2xl shadow-lg p-8">
@@ -171,7 +167,7 @@ export default function Home() {
           </motion.div>
         </AnimatePresence>
       </div>
-      {/* ★★★ 追加：戻るボタンのUI ★★★ */}
+      {/* ★★★ 変更点：「戻る」ボタンを復活 ★★★ */}
       {currentQuestion > 0 && (
         <button onClick={goBack} disabled={isTransitioning} className="fixed bottom-6 left-6 bg-white border-2 border-gray-300 text-gray-700 font-semibold py-2 px-5 rounded-full hover:border-red-500 hover:text-red-500 transition-all disabled:opacity-50 shadow-md">
           ← 戻る
