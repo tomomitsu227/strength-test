@@ -95,18 +95,21 @@ def calculate_creator_personality_final(answers, questions_data, logic_data):
     
     # サブコアの判定
     sub_core_scores = {}
+    # デフォルト値を先に設定
+    sub_core = "The Planner" 
+    
     if 'sub_cores' in logic_data:
-        for sub_core, details in logic_data['sub_cores'].items():
+        for sub_core_name, details in logic_data['sub_cores'].items():
             score_sum = 0
             for dim, weight in details['scores'].items():
                 if dim in big_five_raw:
                     score_sum += big_five_raw[dim] * weight
-            sub_core_scores[sub_core] = score_sum
+            sub_core_scores[sub_core_name] = score_sum
         
-        sub_core = max(sub_core_scores, key=sub_core_scores.get)
-    else:
-        sub_core = "The Planner"
-    
+        # sub_core_scoresが空でないことを確認してからmax()を呼び出す
+        if sub_core_scores:
+            sub_core = max(sub_core_scores, key=sub_core_scores.get)
+                
     return main_core, sub_core, seven_dimensions, big_five_raw, similarity_scores
 
 # グローバル変数でセッション管理（簡易実装）
