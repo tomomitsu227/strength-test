@@ -1,5 +1,3 @@
-# backend/app.py - 新しいtype_logic.jsonに完全対応した最終版
-
 from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 import json
@@ -16,7 +14,7 @@ CORS(app)
 # --- ファイルパスの定義 ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 QUESTIONS_PATH = os.path.join(BASE_DIR, '..', 'data', 'questions.json')
-TYPE_LOGIC_PATH = os.path.join(BASE_DIR, '..', 'data', 'type_logic.json')
+TYPE_LOGIC_PATH = os.path.join(BASE_DIR, '..', 'data', 'type_logic.json')  
 ANALYSIS_PATTERNS_PATH = os.path.join(BASE_DIR, '..', 'data', 'analysis_patterns.json')
 
 # --- 設定ファイルの読み込み ---
@@ -33,128 +31,195 @@ except Exception as e:
 
 # --- 診断ロジック ---
 def calculate_creator_personality_final(answers, questions_data, logic_data):
-    # 1. ビッグファイブ5次元の生スコアを計算 (-8 〜 +8 の範囲)
+    # ビッグファイブの生スコアを計算
     big_five_raw = {
-        "Openness": 0, "Conscientiousness": 0, "Extraversion": 0,
-        "Agreeableness": 0, "Neuroticism": 0
+        "Openness": 0,
+        "Conscientiousness": 0, 
+        "Extraversion": 0,
+        "Agreeableness": 0,
+        "Neuroticism": 0
     }
+    
     for i, answer in enumerate(answers):
         question = questions_data['questions'][i]
         dimension = question['dimension']
-        score = answer - 3 # -2 〜 +2
-        if question['direction'] == '+':
+        direction = question['direction']
+        
+        # 1-5のスケールを-2から+2に変換
+        score = answer - 3
+        
+        # 方向に応じてスコアを加算
+        if direction == '+':
             big_five_raw[dimension] += score
         else:
             big_five_raw[dimension] -= score
-
-    # 2. レーダーチャート用の7次元スコアを計算 (0-10スケール)
+    
+    # 7次元スコアを計算（0-10スケール）
     def normalize_score(raw_score, min_val=-8, max_val=8):
-        raw_score = max(min_val, min(raw_score, max_val))
         return ((raw_score - min_val) / (max_val - min_val)) * 10
-
-    radar_scores = {
+    
+    seven_dimensions = {
         "独創性": normalize_score(big_five_raw["Openness"]),
         "計画性": normalize_score(big_five_raw["Conscientiousness"]),
         "社交性": normalize_score(big_five_raw["Extraversion"]),
-        "共感力": normalize_score(big_five_raw["Agreeableness"]),
+        "共感力": normalize_score(big_five_raw["Agreeableness"]), 
         "精神的安定性": normalize_score(-big_five_raw["Neuroticism"]),
-        "創作スタイル": normalize_score(big_five_raw["Openness"] - big_five_raw["Conscientiousness"]),
-        "協働適性": normalize_score(big_five_raw["Extraversion"] + big_five_raw["Agreeableness"])
+        "創作スタイル": normalize_score((big_five_raw["Openness"] - big_five_raw["Conscientiousness"]) / 2),
+        "協働適性": normalize_score((big_five_raw["Extraversion"] + big_five_raw["Agreeableness"]) / 2)
     }
-
-    # 3. メインコアタイプの判定（7次元スコアでコサイン類似度を計算）
-    radar_dimension_order = list(logic_data["radar_dimensions"].keys())
-    user_vector = np.array([radar_scores[dim] for dim in radar_dimension_order]).reshape(1, -1)
-
+    
+    # メインコアタイプの判定（コサイン類似度）
+    dimension_order = ["Openness", "Conscientiousness", "Extraversion", "Agreeableness", "Neuroticism"]
+    user_vector = np.array([big_five_raw[dim] for dim in dimension_order])
+    
     similarity_scores = {}
-    for core_type, core_data in logic_data['main_core_profiles'].items():
-        ideal_scores = core_data.get('ideal_scores', {})
-        ideal_vector = np.array([ideal_scores.get(dim, 5.0) for dim in radar_dimension_order]).reshape(1, -1)
-        similarity = cosine_similarity(user_vector, ideal_vector)[0][0]
-        similarity_scores[core_type] = similarity
-
-    main_core = max(similarity_scores, key=similarity_scores.get) if similarity_scores else logic_data.get("fallback_main_core", "Practical Entertainer")
-
-    # 4. サブコアの判定（条件式を評価）
-    sub_core = "The Planner"
-    # サブコアの条件を評価するためのスコープ
-    eval_scope = radar_scores.copy()
     
-    # 優先順位をつけるため、キーのリストを定義 (必要に応じて変更)
-    sub_core_priority = ["The Deep-Diver", "The Accelerator", "The Analyst", "The Planner", "The Harmonizer"]
+    if 'main_core_profiles' in logic_data:
+        for core_type, core_data in logic_data['main_core_profiles'].items():
+            ideal_bf = {
+                "Openness": core_data['ideal_scores'].get('Openness', 0),
+                "Conscientiousness": core_data['ideal_scores'].get('Conscientiousness', 0),
+                "Extraversion": core_data['ideal_scores'].get('Extraversion', 0),
+                "Agreeableness": core_data['ideal_scores'].get('Agreeableness', 0),
+                "Neuroticism": core_data['ideal_scores'].get('Neuroticism', 0)
+            }
+            ideal_vector = np.array([ideal_bf[dim] for dim in dimension_order])
+            
+            similarity = cosine_similarity(
+                user_vector.reshape(1, -1),
+                ideal_vector.reshape(1, -1)
+            )[0][0]
+            similarity_scores[core_type] = similarity
     
-    found_sub_core = False
-    for core_name in sub_core_priority:
-        details = logic_data.get("sub_cores", {}).get(core_name)
-        if not details: continue
+    main_core = max(similarity_scores, key=similarity_scores.get) if similarity_scores else 'Practical Entertainer'
+    
+    # サブコアの判定
+    sub_core_scores = {}
+    if 'sub_cores' in logic_data:
+        for sub_core, details in logic_data['sub_cores'].items():
+            score_sum = 0
+            for dim, weight in details['scores'].items():
+                if dim in big_five_raw:
+                    score_sum += big_five_raw[dim] * weight
+            sub_core_scores[sub_core] = score_sum
         
-        condition = details.get("condition")
-        if condition:
-            try:
-                # ANDで条件を分割してすべて満たすかチェック
-                all_conditions_met = True
-                for part_condition in condition.split('AND'):
-                    part_condition = part_condition.strip()
-                    # evalを安全に使うために、スコープを限定する
-                    if not eval(part_condition, {"__builtins__": None}, eval_scope):
-                        all_conditions_met = False
-                        break
-                
-                if all_conditions_met:
-                    sub_core = core_name
-                    found_sub_core = True
-                    break
-            except Exception:
-                continue
-    # もしどの条件にも一致しなかった場合、デフォルトのHarmonizerにするなどルールを決めても良い
-    if not found_sub_core:
-        sub_core = "The Harmonizer"
+        sub_core = max(sub_core_scores, key=sub_core_scores.get)
+    else:
+        sub_core = "The Planner"
+    
+    return main_core, sub_core, seven_dimensions, big_five_raw, similarity_scores
 
+# グローバル変数でセッション管理（簡易実装）
+USER_SESSIONS = {}
 
-    return main_core, sub_core, radar_scores, big_five_raw, similarity_scores
-
-# (APIエンドポイント部分は変更なし)
+# --- APIエンドポイント ---
 @app.route('/api/questions', methods=['GET'])
 def get_questions():
     return jsonify(QUESTIONS_DATA)
-@app.route('/api/start', methods=['POST'])
-def start_test():
-    return jsonify({'user_id': str(uuid.uuid4()), 'started_at': datetime.now().isoformat()})
+
 @app.route('/api/submit', methods=['POST'])
 def submit_answers():
-    try:
-        data = request.json
-        user_id, answers = data.get('user_id'), data.get('answers')
-        if not all([user_id, answers, len(answers) == 20]):
-            return jsonify({'error': '無効なデータです'}), 400
-        main_core, sub_core, radar_scores, _, _ = calculate_creator_personality_final(answers, QUESTIONS_DATA, TYPE_LOGIC)
-        analysis_data = ANALYSIS_PATTERNS.get(main_core, {}).get(sub_core, {})
-        response = {
-            'user_id': user_id,
-            'main_core_name': ANALYSIS_PATTERNS.get(main_core, {}).get("name", main_core),
-            'sub_core_title': analysis_data.get("sub_core_title", sub_core),
-            'suited_for': analysis_data.get("suited_for", ""),
-            'not_suited_for': analysis_data.get("not_suited_for", ""),
-            'synthesis': analysis_data.get("synthesis", ""),
-            'radar_scores': {k: round(v, 1) for k, v in radar_scores.items()},
-            'completed_at': datetime.now().isoformat()
+    data = request.json
+    user_id = data.get('user_id')
+    answers = data.get('answers')
+    
+    if not all([user_id, answers, len(answers) == 20]):
+        return jsonify({'error': '無効なデータです'}), 400
+    
+    # 診断実行
+    main_core, sub_core, seven_dimensions, big_five_raw, similarity_scores = \
+        calculate_creator_personality_final(answers, QUESTIONS_DATA, TYPE_LOGIC)
+    
+    # 分析データの取得
+    analysis_data = ANALYSIS_PATTERNS.get(main_core, {}).get(sub_core, {})
+    
+    # データ分析
+    extreme_answers = sum(1 for ans in answers if ans == 1 or ans == 5)
+    extremeness_score = (extreme_answers / 20) * 100
+    
+    if extremeness_score >= 75:
+        extremeness_comment = "あなたは自分の考えやスタイルが非常に明確で、白黒はっきりさせる傾向があります。"
+    elif extremeness_score >= 50:
+        extremeness_comment = "あなたは多くの事柄に対して自分の意見をしっかり持っているタイプです。"
+    else:
+        extremeness_comment = "あなたは物事を多角的に捉え、バランスの取れた判断をする傾向があります。"
+    
+    bf_scores_jp = {
+        "独創性": big_five_raw['Openness'],
+        "計画性": big_five_raw['Conscientiousness'],
+        "社交性": big_five_raw['Extraversion'],
+        "共感力": big_five_raw['Agreeableness'],
+        "精神的安定性": -big_five_raw['Neuroticism']
+    }
+    
+    deviations = {k: abs(v) for k, v in bf_scores_jp.items()}
+    most_unique_trait = max(deviations, key=deviations.get)
+    
+    uniqueness_comment = f"あなたのビッグファイブ特性の中で、平均的な傾向から最も大きく離れているのは「{most_unique_trait}」です。"
+    
+    # レスポンスの構築
+    response = {
+        'user_id': user_id,
+        'main_core_name': ANALYSIS_PATTERNS.get(main_core, {}).get("name", main_core),
+        'sub_core_title': analysis_data.get("sub_core_title", sub_core),
+        'suited_for': analysis_data.get("suited_for", ""),
+        'not_suited_for': analysis_data.get("not_suited_for", ""),
+        'synthesis': analysis_data.get("synthesis", ""),
+        'radar_scores': {
+            k: round(v, 1) for k, v in seven_dimensions.items()
+        },
+        'data_analysis': {
+            'extremeness_score': round(extremeness_score),
+            'extremeness_comment': extremeness_comment,
+            'most_unique_trait': most_unique_trait,
+            'uniqueness_comment': uniqueness_comment
+        },
+        'completed_at': datetime.now().isoformat()
+    }
+    
+    # セッションに保存
+    USER_SESSIONS[user_id] = response
+    
+    return jsonify(response)
+
+@app.route('/api/pdf/<user_id>', methods=['GET'])
+def download_pdf(user_id):
+    # セッションからデータを取得
+    if user_id in USER_SESSIONS:
+        result_data = USER_SESSIONS[user_id]
+    else:
+        # ダミーデータ（セッションが無い場合）
+        result_data = {
+            'main_core_name': '孤高のアーティスト',
+            'sub_core_title': '静かな共感の表現者',
+            'suited_for': 'あなたの独創性の高さから、他の人には思いつかない斬新な表現を生み出すことに長けている傾向があります。',
+            'not_suited_for': '集団での作業や、既存の枠組みに縛られる活動は、あなたの特性とは合わないかもしれません。',
+            'synthesis': 'あなたは独自の世界観を持ち、一人の時間を大切にしながら深く考え、創作に取り組むタイプです。',
+            'radar_scores': {
+                '独創性': 8.5,
+                '計画性': 7.0,
+                '社交性': 2.5,
+                '共感力': 5.0,
+                '精神的安定性': 5.5,
+                '創作スタイル': 8.0,
+                '協働適性': 3.5
+            }
         }
-        return jsonify(response)
-    except Exception as e:
-        app.logger.error(f"Error in /api/submit: {e}")
-        return jsonify({'error': 'サーバー内部でエラーが発生しました。'}), 500
-@app.route('/api/generate_pdf', methods=['POST'])
-def generate_pdf():
-    result_data = request.json
-    if not result_data: return jsonify({'error': 'PDF生成用のデータがありません'}), 400
-    try:
-        pdf_buffer = generate_pdf_report_final("report", result_data)
-        return send_file(pdf_buffer, mimetype='application/pdf', as_attachment=True, download_name='creator_core_report.pdf')
-    except Exception as e:
-        app.logger.error(f"PDF generation failed: {e}")
-        return jsonify({'error': f'PDF生成中にエラーが発生しました: {str(e)}'}), 500
+    
+    # PDF生成
+    pdf_buffer = generate_pdf_report_final("動画クリエイター特性診断レポート", result_data)
+    pdf_buffer.seek(0)
+    
+    return send_file(
+        pdf_buffer, 
+        mimetype='application/pdf', 
+        as_attachment=True, 
+        download_name=f'creator_core_report_{user_id}.pdf'
+    )
+
 @app.route('/api/health', methods=['GET'])
 def health_check():
     return jsonify({'status': 'ok'})
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
