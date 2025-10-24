@@ -49,73 +49,88 @@ interface ResultData {
   };
 }
 
-const IconWrapper = ({ children }: { children: React.ReactNode }) => (
-  <div className="flex items-center justify-center w-12 h-12 bg-red-100 dark:bg-gray-700 rounded-full mb-4">
-    {children}
-  </div>
-);
-
 export default function CreatorDiagnosisPage() {
   const [started, setStarted] = useState(false);
-  const [questionsData, setQuestionsData] = useState<QuestionsData>();
+  const [completed, setCompleted] = useState(false);
+  const [questionsData, setQuestionsData] = useState<QuestionsData | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<number[]>([]);
+  const [userId, setUserId] = useState<string>('');
   const [result, setResult] = useState<ResultData | null>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   useEffect(() => {
-    async function fetchQuestions() {
-      const res = await axios.get(`${API_BASE}/questions`);
+    axios.get(`${API_BASE}/questions`).then((res) => {
       setQuestionsData(res.data);
-    }
-    fetchQuestions();
+      // 質問数に合わせてanswers配列を初期化
+      setAnswers(new Array(res.data.questions.length).fill(0));
+    });
   }, []);
 
+  const startTest = async () => {
+    try {
+      const res = await axios.post(`${API_BASE}/start`);
+      setUserId(res.data.user_id);
+      setStarted(true);
+    } catch (e) {
+      alert("診断を開始できませんでした。");
+    }
+  };
+
   const handleAnswer = (answer: number) => {
+    if (isTransitioning) return;
+    
     const newAnswers = [...answers];
     newAnswers[currentQuestion] = answer;
     setAnswers(newAnswers);
-
-    if (currentQuestion < (questionsData?.questions.length || 0) - 1) {
-      setCurrentQuestion(currentQuestion + 1);
-    } else {
-      submitAnswers(newAnswers);
-    }
+    
+    setIsTransitioning(true);
+    
+    setTimeout(() => {
+      if (currentQuestion < (questionsData?.questions.length || 0) - 1) {
+        setCurrentQuestion(currentQuestion + 1);
+      } else {
+        submitAnswers(newAnswers);
+      }
+      setIsTransitioning(false);
+    }, 200);
   };
-
-  const submitAnswers = async (ans: number[]) => {
-    const user_id = 'user-' + Math.random().toString(36).slice(2, 8);
-    const res = await axios.post(`${API_BASE}/submit`, {
-      user_id,
-      answers: ans
-    });
-    setResult(res.data);
+  
+  const submitAnswers = async (finalAnswers: number[]) => {
+    try {
+      const res = await axios.post(`${API_BASE}/submit`, {
+        user_id: userId,
+        answers: finalAnswers,
+      });
+      setResult(res.data);
+      setCompleted(true);
+    } catch (e) {
+      alert("結果を送信できませんでした。");
+    }
   };
 
   const handleDownloadPDF = async () => {
-    if (!result) return;
-    try {
-      const response = await axios.get(
-        `${API_BASE}/pdf/${result.user_id}`,
-        { responseType: 'blob' }
-      );
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `creator_core_report_${result.user_id}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (error) {
-      console.error('PDF download error:', error);
-      alert('PDFのダウンロードに失敗しました');
-    }
+    // この関数は app.py 側の修正が必要
+    alert('現在PDFダウンロード機能は調整中です。');
   };
+
+  const restartTest = () => {
+    setStarted(false);
+    setCompleted(false);
+    setResult(null);
+    setCurrentQuestion(0);
+    if(questionsData) {
+      setAnswers(new Array(questionsData.questions.length).fill(0));
+    }
+    setUserId('');
+  };
+
 
   if (!questionsData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-orange-50 dark:from-gray-900 dark:to-gray-800">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:from-gray-900 dark:to-gray-800">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400">読み込み中...</p>
         </div>
       </div>
@@ -123,105 +138,64 @@ export default function CreatorDiagnosisPage() {
   }
 
   // トップページ（診断開始前）
-  if (!started && !result) {
+  if (!started) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-        <div className="container mx-auto px-4 py-16">
-          {/* ヒーロー画像 */}
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center p-6">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="text-center w-full max-w-4xl"
+        >
+          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
+            動画クリエイター特性診断
+          </h1>
+          <p className="text-lg md:text-xl text-gray-700 dark:text-gray-300 mb-12 max-w-3xl mx-auto">
+            20の質問から、あなたのクリエイターとしての「核」となる強みと、才能が最も輝く創作スタイルを発見します。
+          </p>
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-12"
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-xl max-w-2xl mx-auto mb-12"
           >
-            <div className="relative w-full max-w-4xl mx-auto mb-8 rounded-2xl overflow-hidden shadow-2xl">
-              <Image
-                src="/hero.jpg"
-                alt="動画クリエイター"
-                width={1200}
-                height={600}
-                className="w-full h-auto"
-                priority
-              />
-            </div>
-            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
-              動画クリエイター特性診断
-            </h1>
-            <p className="text-xl md:text-2xl text-gray-700 dark:text-gray-300 mb-8">
-              20の質問から、あなたのクリエイターとしての「核」と、才能が輝くスタイルを発見します。
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              あなたの「本質」を見つけよう
+            </h3>
+            <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+             20の質問を通じて、あなたのクリエイターとしての強みや、最も輝ける創作スタイルを客観的に分析。一人で深く掘り下げるべきか、チームで輝くべきか、あなたの活動のヒントがここにあります。
             </p>
           </motion.div>
 
-          {/* 特徴カード */}
-          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-12">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-xl"
-            >
-              <IconWrapper>
-                <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                </svg>
-              </IconWrapper>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                あなたの「本質」を理解する
-              </h3>
-              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                どのような環境で輝き、何を手放すべきか。あなたの生まれ持った特性を客観的に分析し、無理なく活動を続けるための指針を示します。
-              </p>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-xl"
-            >
-              <IconWrapper>
-                <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </IconWrapper>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                最適な「創作スタイル」を発見する
-              </h3>
-              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                一人で黙々と作業するべきか、チームで協力するべきか。あなたの特性に合った動画の作り方や、チャンネル運営の方向性が明確になります。
-              </p>
-            </motion.div>
-          </div>
-
-          {/* 診断開始ボタン */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
             className="text-center"
           >
             <button
-              onClick={() => setStarted(true)}
-              className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white text-xl font-bold py-6 px-12 rounded-full shadow-2xl transform hover:scale-105 transition-all duration-300"
+              onClick={startTest}
+              className="bg-red-600 hover:bg-red-700 text-white text-xl font-bold py-5 px-16 rounded-full shadow-lg transform hover:scale-105 transition-all duration-300"
             >
               診断を始める
             </button>
-            <p className="mt-6 text-gray-500 dark:text-gray-400">
+            <p className="mt-6 text-sm text-gray-500 dark:text-gray-400">
               所要時間: 約3分
             </p>
           </motion.div>
-        </div>
+        </motion.div>
       </div>
     );
   }
 
   // 質問画面
-  if (!result && started) {
+  if (!completed) {
     const q = questionsData.questions[currentQuestion];
     const progress = ((currentQuestion + 1) / questionsData.questions.length) * 100;
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4">
         <div className="max-w-3xl w-full">
           {/* プログレスバー */}
           <div className="mb-8">
@@ -229,15 +203,14 @@ export default function CreatorDiagnosisPage() {
               <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">
                 質問 {currentQuestion + 1} / {questionsData.questions.length}
               </span>
-              <span className="text-sm font-semibold text-red-500">
+              <span className="text-sm font-semibold text-red-600">
                 {Math.round(progress)}%
               </span>
             </div>
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
               <motion.div
-                initial={{ width: 0 }}
+                className="bg-red-600 h-2 rounded-full"
                 animate={{ width: `${progress}%` }}
-                className="bg-gradient-to-r from-red-500 to-orange-500 h-2 rounded-full"
                 transition={{ duration: 0.3 }}
               />
             </div>
@@ -251,54 +224,53 @@ export default function CreatorDiagnosisPage() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -50 }}
               transition={{ duration: 0.3 }}
-              className="bg-white dark:bg-gray-800 rounded-2xl p-8 md:p-12 shadow-2xl"
+              className="bg-white dark:bg-gray-800 rounded-2xl p-8 md:p-12 shadow-xl"
             >
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-8 leading-relaxed">
+              <div className="flex justify-center mb-6">
+                <div className="flex items-center justify-center w-16 h-16 bg-red-600 text-white font-bold text-2xl rounded-full">
+                  Q{currentQuestion + 1}
+                </div>
+              </div>
+
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-8 leading-relaxed text-center">
                 {q.q}
               </h2>
 
               <div className="space-y-4">
                 {[
-                  { value: 1, label: '全く当てはまらない' },
-                  { value: 2, label: 'あまり当てはまらない' },
-                  { value: 3, label: 'どちらとも言えない' },
+                  { value: 5, label: 'とても当てはまる' },
                   { value: 4, label: 'やや当てはまる' },
-                  { value: 5, label: 'とても当てはまる' }
+                  { value: 3, label: 'どちらとも言えない' },
+                  { value: 2, label: 'あまり当てはまらない' },
+                  { value: 1, label: '全く当てはまらない' }
                 ].map((option) => (
                   <button
                     key={option.value}
                     onClick={() => handleAnswer(option.value)}
-                    className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 ${
+                    disabled={isTransitioning}
+                    className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 disabled:opacity-50 ${
                       answers[currentQuestion] === option.value
                         ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
                         : 'border-gray-200 dark:border-gray-700 hover:border-red-300 dark:hover:border-red-700'
                     }`}
                   >
-                    <div className="flex items-center">
-                      <div className={`w-6 h-6 rounded-full border-2 mr-4 flex items-center justify-center ${
-                        answers[currentQuestion] === option.value
-                          ? 'border-red-500 bg-red-500'
-                          : 'border-gray-300 dark:border-gray-600'
-                      }`}>
-                        {answers[currentQuestion] === option.value && (
-                          <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                      </div>
-                      <span className="text-gray-700 dark:text-gray-300 font-medium">
+                     <span className="text-gray-700 dark:text-gray-300 font-medium text-lg">
                         {option.label}
                       </span>
-                    </div>
                   </button>
                 ))}
               </div>
 
-              {/* 戻るボタン */}
               {currentQuestion > 0 && (
                 <button
-                  onClick={() => setCurrentQuestion(currentQuestion - 1)}
-                  className="mt-6 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 flex items-center"
+                  onClick={() => {
+                    if (isTransitioning) return;
+                    setIsTransitioning(true);
+                    setCurrentQuestion(currentQuestion - 1);
+                    setTimeout(() => setIsTransitioning(false), 200);
+                  }}
+                  disabled={isTransitioning}
+                  className="mt-8 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 flex items-center disabled:opacity-50"
                 >
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -314,25 +286,15 @@ export default function CreatorDiagnosisPage() {
   }
 
   // 結果表示画面
-  if (result) {
-    // 7次元レーダーチャートラベル
-    const radarLabels = [
-      '独創性',
-      '計画性',
-      '社交性',
-      '共感力',
-      '精神的安定性',
-      '創作スタイル',
-      '協働適性'
-    ];
-
+  if (completed && result) {
+    const radarLabels = Object.keys(result.radar_scores);
     const radarData = {
       labels: radarLabels,
       datasets: [
         {
           label: 'あなたのスコア',
           data: radarLabels.map(label => result.radar_scores?.[label] || 0),
-          backgroundColor: 'rgba(239,68,68,0.2)',
+          backgroundColor: 'rgba(239, 68, 68, 0.2)',
           borderColor: '#EF4444',
           pointBackgroundColor: '#EF4444',
           pointBorderColor: '#fff',
@@ -342,21 +304,23 @@ export default function CreatorDiagnosisPage() {
       ]
     };
 
-    const radarOptions = {
+    const radarOptions: any = {
       scales: {
         r: {
           min: 0,
           max: 10,
           ticks: {
-            stepSize: 2,
-            color: '#6B7280',
-            font: { size: 12 }
+            display: false,
+            stepSize: 2
           },
           pointLabels: {
-            font: { size: 14, family: 'Noto Sans JP, sans-serif' },
+            font: { size: 14, family: '"Helvetica Neue", "Helvetica", "Arial", sans-serif' },
             color: '#374151'
           },
           grid: {
+            color: '#E5E7EB'
+          },
+          angleLines: {
             color: '#E5E7EB'
           }
         }
@@ -367,9 +331,8 @@ export default function CreatorDiagnosisPage() {
     };
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 dark:from-gray-900 dark:to-gray-800 py-12 px-4">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4">
         <div className="max-w-4xl mx-auto">
-          {/* ヘッダー */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -378,23 +341,22 @@ export default function CreatorDiagnosisPage() {
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
               診断結果
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-lg text-gray-600 dark:text-gray-400">
               あなたのクリエイタータイプが判明しました
             </p>
           </motion.div>
 
-          {/* メインコアタイプ */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
             className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-xl mb-8"
           >
-            <div className="text-center mb-6">
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+            <div className="text-center">
+              <p className="text-lg text-gray-500 dark:text-gray-400 mb-2">
                 あなたのメインコアは
               </p>
-              <h2 className="text-3xl md:text-4xl font-bold text-red-500 mb-3">
+              <h2 className="text-4xl md:text-5xl font-bold text-red-600 mb-3">
                 {result.main_core_name}
               </h2>
               <p className="text-xl text-gray-700 dark:text-gray-300">
@@ -402,8 +364,7 @@ export default function CreatorDiagnosisPage() {
               </p>
             </div>
           </motion.div>
-
-          {/* レーダーチャート */}
+          
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -413,80 +374,35 @@ export default function CreatorDiagnosisPage() {
             <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
               あなたの特性プロファイル
             </h3>
-            <div className="max-w-2xl mx-auto">
+            <div className="max-w-lg mx-auto">
               <Radar data={radarData} options={radarOptions} />
             </div>
           </motion.div>
 
-          {/* 向いていること・意識すると良い点 */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="space-y-6 mb-8"
+            className="space-y-8 mb-8"
           >
-            <div className="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 rounded-r-2xl p-6 shadow-lg">
-              <h3 className="text-xl font-bold text-green-700 dark:text-green-400 mb-4 flex items-center">
-                <svg className="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-xl">
+               <h3 className="text-xl font-bold text-green-700 dark:text-green-400 mb-4">
                 あなたに向いていること
               </h3>
-              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
                 {result.suited_for || '…'}
               </p>
             </div>
-
-            <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 rounded-r-2xl p-6 shadow-lg">
-              <h3 className="text-xl font-bold text-red-700 dark:text-red-400 mb-4 flex items-center">
-                <svg className="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-xl">
+              <h3 className="text-xl font-bold text-red-700 dark:text-red-400 mb-4">
                 意識すると良い点
               </h3>
-              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
                 {result.not_suited_for || '…'}
               </p>
             </div>
           </motion.div>
 
-          {/* データ分析（互換性のため残す） */}
-          {result.data_analysis && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-              className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-xl mb-8"
-            >
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-                特性の分析
-              </h3>
-              <div className="space-y-6">
-                {result.data_analysis.extremeness_comment && (
-                  <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-6">
-                    <h4 className="font-bold text-purple-700 dark:text-purple-400 mb-3">
-                      特性の強さ
-                    </h4>
-                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                      {result.data_analysis.extremeness_comment}
-                    </p>
-                  </div>
-                )}
-                {result.data_analysis.uniqueness_comment && (
-                  <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-6">
-                    <h4 className="font-bold text-indigo-700 dark:text-indigo-400 mb-3">
-                      あなたのユニークさ
-                    </h4>
-                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                      {result.data_analysis.uniqueness_comment}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-
-          {/* 総合分析 */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -494,14 +410,13 @@ export default function CreatorDiagnosisPage() {
             className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-xl mb-8"
           >
             <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-              総合分析
+              分析結果のまとめ
             </h3>
-            <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+            <p className="text-gray-700 dark:text-gray-300 leading-loose whitespace-pre-wrap">
               {result.synthesis || '…'}
             </p>
           </motion.div>
 
-          {/* アクションボタン */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -510,20 +425,12 @@ export default function CreatorDiagnosisPage() {
           >
             <button
               onClick={handleDownloadPDF}
-              className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-bold py-4 px-8 rounded-full shadow-lg transform hover:scale-105 transition-all duration-300"
+              className="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-full shadow-lg transform hover:scale-105 transition-all duration-300"
             >
-              <svg className="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              PDFでダウンロード
+              PDFでダウンロード (調整中)
             </button>
             <button
-              onClick={() => {
-                setStarted(false);
-                setResult(null);
-                setAnswers([]);
-                setCurrentQuestion(0);
-              }}
+              onClick={restartTest}
               className="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-bold py-4 px-8 rounded-full shadow-lg transform hover:scale-105 transition-all duration-300"
             >
               もう一度診断する
