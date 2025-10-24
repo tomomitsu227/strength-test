@@ -1,4 +1,4 @@
-# backend/app.py - 改善版 (コサイン類似度ベースの診断ロジック)
+# backend/app.py - ビッグファイブベースの完全改訂版
 
 from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
@@ -31,24 +31,17 @@ except Exception as e:
     print(f"設定ファイルの読み込み中にエラーが発生しました: {e}")
     exit()
 
-# --- 診断ロジック(改善版) ---
-def calculate_creator_personality_advanced(answers, questions_data, logic_data):
+# --- ビッグファイブベースの診断ロジック ---
+def calculate_bigfive_scores(answers, questions_data):
     """
-    コサイン類似度ベースの診断ロジック
-    各メインコアタイプの理想プロファイルとの類似度を計算し、最も近いタイプを判定
+    ビッグファイブ5特性のスコアを計算
     """
-    # 1. 各ディメンションのスコアを計算
     scores = {
         "Openness": 0,
         "Conscientiousness": 0,
         "Extraversion": 0,
         "Agreeableness": 0,
-        "StressTolerance": 0,
-        "InformationStyle": 0,
-        "DecisionMaking": 0,
-        "MotivationSource": 0,
-        "ValuePursuit": 0,
-        "WorkStyle": 0
+        "Neuroticism": 0
     }
     
     for i, answer in enumerate(answers):
@@ -62,74 +55,86 @@ def calculate_creator_personality_advanced(answers, questions_data, logic_data):
         else:
             scores[dimension] -= score
     
-    # 2. ユーザーのスコアベクトルを作成
-    dimension_order = [
-        "Openness", "Conscientiousness", "Extraversion", "Agreeableness", 
-        "StressTolerance", "InformationStyle", "DecisionMaking", 
-        "MotivationSource", "ValuePursuit", "WorkStyle"
-    ]
-    user_vector = np.array([scores[dim] for dim in dimension_order])
+    # 各特性は4問ずつなので、-8〜+8の範囲
+    # これを0〜5のスケールに正規化
+    normalized_scores = {}
+    for dim, raw_score in scores.items():
+        # -8〜+8を0〜5に変換
+        normalized_scores[dim] = ((raw_score + 8) / 16) * 5
     
-    # 3. 各メインコアタイプとの類似度を計算
+    return normalized_scores
+
+
+def calculate_derived_scores(bigfive_scores):
+    """
+    ビッグファイブから派生指標を計算
+    """
+    derived = {}
+    
+    # 基本5特性（日本語名にマッピング）
+    derived['独創性'] = bigfive_scores['Openness']
+    derived['計画性'] = bigfive_scores['Conscientiousness']
+    derived['社交性'] = bigfive_scores['Extraversion']
+    derived['共感力'] = bigfive_scores['Agreeableness']
+    derived['精神的安定性'] = 5 - bigfive_scores['Neuroticism']  # 神経症傾向は逆転
+    
+    # 派生指標
+    derived['創作スタイル'] = (bigfive_scores['Openness'] * 0.6) + \
+                              ((5 - bigfive_scores['Conscientiousness']) * 0.4)
+    derived['協働適性'] = (bigfive_scores['Extraversion'] * 0.5) + \
+                          (bigfive_scores['Agreeableness'] * 0.5)
+    
+    return derived
+
+
+def determine_main_core(derived_scores, logic_data):
+    """
+    コサイン類似度で最適なメインコアを判定
+    """
+    dimension_order = ['独創性', '計画性', '社交性', '共感力', '精神的安定性', '創作スタイル', '協働適性']
+    user_vector = np.array([derived_scores[dim] for dim in dimension_order])
+    
     similarity_scores = {}
+    for core_type, core_data in logic_data['main_core_profiles'].items():
+        ideal_vector = np.array([
+            core_data['ideal_scores'][dim] for dim in dimension_order
+        ])
+        similarity = cosine_similarity(
+            user_vector.reshape(1, -1),
+            ideal_vector.reshape(1, -1)
+        )[0][0]
+        similarity_scores[core_type] = similarity
     
-    # 新しいロジック形式の場合
-    if 'main_core_profiles' in logic_data:
-        for core_type, core_data in logic_data['main_core_profiles'].items():
-            ideal_vector = np.array([
-                core_data['ideal_scores'][dim] for dim in dimension_order
-            ])
-            # コサイン類似度を計算
-            similarity = cosine_similarity(
-                user_vector.reshape(1, -1),
-                ideal_vector.reshape(1, -1)
-            )[0][0]
-            similarity_scores[core_type] = similarity
-    
-    # 古いロジック形式の場合(後方互換性)
+    main_core = max(similarity_scores, key=similarity_scores.get)
+    return main_core, similarity_scores
+
+
+def determine_sub_core(derived_scores, logic_data):
+    """
+    派生スコアからサブコアを判定（簡易ルールベース）
+    """
+    if derived_scores['計画性'] > 3.5:
+        return 'The Planner'
+    elif derived_scores['精神的安定性'] > 3.5 and derived_scores['独創性'] > 3.0:
+        return 'The Analyst'
+    elif derived_scores['共感力'] > 3.5:
+        return 'The Harmonizer'
+    elif derived_scores['計画性'] < 2.5 and derived_scores['社交性'] > 3.0:
+        return 'The Accelerator'
+    elif derived_scores['独創性'] > 3.5 and derived_scores['社交性'] < 3.0:
+        return 'The Deep-Diver'
     else:
-        matched_cores = []
-        for core_rule in logic_data['main_cores']:
-            is_match = True
-            if 'all' in core_rule['conditions']:
-                for condition in core_rule['conditions']['all']:
-                    dim = condition['dimension']
-                    op = condition['operator']
-                    val = condition['value']
-                    if op == '>' and not scores[dim] > val:
-                        is_match = False
-                        break
-                    if op == '<' and not scores[dim] < val:
-                        is_match = False
-                        break
-            if is_match:
-                matched_cores.append(core_rule)
-        
-        if matched_cores:
-            matched_cores.sort(key=lambda x: x['priority'], reverse=True)
-            main_core = matched_cores[0]['type']
+        # デフォルトは最も高いスコアの特性から判定
+        max_trait = max(derived_scores, key=derived_scores.get)
+        if max_trait == '独創性':
+            return 'The Deep-Diver'
+        elif max_trait == '計画性':
+            return 'The Planner'
+        elif max_trait == '共感力':
+            return 'The Harmonizer'
         else:
-            main_core = logic_data.get('fallback_main_core', 'Practical Entertainer')
-    
-    # 4. 最も類似度の高いタイプを判定
-    if similarity_scores:
-        main_core = max(similarity_scores, key=similarity_scores.get)
-        max_similarity = similarity_scores[main_core]
-    else:
-        max_similarity = None
-    
-    # 5. サブコアの判定(従来通り)
-    sub_core_scores = {}
-    for sub_core, details in logic_data['sub_cores'].items():
-        score_sum = sum(
-            scores[dim] * weight 
-            for dim, weight in details['scores'].items()
-        )
-        sub_core_scores[sub_core] = score_sum
-    
-    sub_core = max(sub_core_scores, key=sub_core_scores.get)
-    
-    return main_core, sub_core, scores, similarity_scores
+            return 'The Accelerator'
+
 
 # --- APIエンドポイント ---
 
@@ -138,6 +143,7 @@ def get_questions():
     """質問リストを返す"""
     return jsonify(QUESTIONS_DATA)
 
+
 @app.route('/api/start', methods=['POST'])
 def start_test():
     """診断開始"""
@@ -145,6 +151,7 @@ def start_test():
         'user_id': str(uuid.uuid4()),
         'started_at': datetime.now().isoformat()
     })
+
 
 @app.route('/api/submit', methods=['POST'])
 def submit_answers():
@@ -157,51 +164,23 @@ def submit_answers():
     if not all([user_id, answers, len(answers) == 20]):
         return jsonify({'error': '無効なデータです'}), 400
     
-    # 診断実行
-    main_core, sub_core, scores, similarity_scores = calculate_creator_personality_advanced(
-        answers, QUESTIONS_DATA, TYPE_LOGIC
-    )
+    # ステップ1: ビッグファイブスコアの計算
+    bigfive_scores = calculate_bigfive_scores(answers, QUESTIONS_DATA)
+    
+    # ステップ2: 派生指標の計算
+    derived_scores = calculate_derived_scores(bigfive_scores)
+    
+    # ステップ3: メインコアの判定
+    main_core, similarity_scores = determine_main_core(derived_scores, TYPE_LOGIC)
+    
+    # ステップ4: サブコアの判定
+    sub_core = determine_sub_core(derived_scores, TYPE_LOGIC)
     
     # 分析データの取得
     analysis_data = ANALYSIS_PATTERNS.get(main_core, {}).get(sub_core, {})
     
-    # データ分析:回答の明確さ
-    extreme_answers = sum(1 for ans in answers if ans == 1 or ans == 5)
-    extremeness_score = (extreme_answers / 20) * 100
-    
-    if extremeness_score >= 75:
-        extremeness_comment = (
-            "あなたは自分の考えやスタイルが非常に明確で、白黒はっきりさせる傾向があります。"
-            "この「尖った」姿勢が熱狂的なファンを生む一方で、時には賛否が分かれる可能性も秘めています。"
-        )
-    elif extremeness_score >= 50:
-        extremeness_comment = (
-            "あなたは多くの事柄に対して自分の意見をしっかり持っているタイプです。"
-            "その明確なスタンスが、あなたのクリエイターとしての個性や「色」に繋がっています。"
-        )
-    else:
-        extremeness_comment = (
-            "あなたは物事を多角的に捉え、バランスの取れた判断をする傾向があります。"
-            "その柔軟性は多くの人に受け入れられやすい一方で、強い個性を出すには意識的な工夫が必要かもしれません。"
-        )
-    
-    # データ分析:最も特徴的な才能
-    bf_scores = {
-        "開放性": scores['Openness'],
-        "誠実性": scores['Conscientiousness'],
-        "外向性": scores['Extraversion'],
-        "協調性": scores['Agreeableness'],
-        "ストレス耐性": scores['StressTolerance']
-    }
-    
-    deviations = {k: abs(v) for k, v in bf_scores.items()}
-    most_unique_trait = max(deviations, key=deviations.get)
-    
-    uniqueness_comment = (
-        f"あなたのビッグファイブ特性の中で、平均的な傾向から最も大きく離れているのは"
-        f"「{most_unique_trait}」です。これはあなたのパーソナリティを特徴づける最もユニークな才能であり、"
-        f"他の人にはない強力な武器となる可能性を秘めています。"
-    )
+    # レーダーチャート用のスコア（0-10スケールに変換）
+    radar_scores = {k: round(v * 2, 1) for k, v in derived_scores.items()}
     
     # レスポンスの構築
     response = {
@@ -211,17 +190,8 @@ def submit_answers():
         'suited_for': analysis_data.get("suited_for"),
         'not_suited_for': analysis_data.get("not_suited_for"),
         'synthesis': analysis_data.get("synthesis"),
-        'radar_scores': {
-            k: round(((v + 4) / 8) * 10, 1) 
-            for k, v in scores.items()
-        },
-        'raw_scores': scores,  # デバッグ用に生スコアも含める
-        'data_analysis': {
-            'extremeness_score': round(extremeness_score),
-            'extremeness_comment': extremeness_comment,
-            'most_unique_trait': most_unique_trait,
-            'uniqueness_comment': uniqueness_comment
-        },
+        'radar_scores': radar_scores,
+        'bigfive_scores': {k: round(v, 2) for k, v in bigfive_scores.items()},
         'completed_at': datetime.now().isoformat()
     }
     
@@ -240,6 +210,7 @@ def submit_answers():
     
     return jsonify(response)
 
+
 @app.route('/api/generate_pdf', methods=['POST'])
 def generate_pdf():
     """PDF生成"""
@@ -255,8 +226,7 @@ def generate_pdf():
         'suited_for': result_data.get('suited_for'),
         'not_suited_for': result_data.get('not_suited_for'),
         'synthesis': result_data.get('synthesis'),
-        'radar_scores': result_data.get('radar_scores'),
-        'data_analysis': result_data.get('data_analysis', {})
+        'radar_scores': result_data.get('radar_scores')
     }
     
     try:
@@ -272,10 +242,12 @@ def generate_pdf():
     except Exception as e:
         return jsonify({'error': f'PDF生成中にエラーが発生しました: {str(e)}'}), 500
 
+
 @app.route('/api/health', methods=['GET'])
 def health_check():
     """ヘルスチェック"""
     return jsonify({'status': 'ok'})
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

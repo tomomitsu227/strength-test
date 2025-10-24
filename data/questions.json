@@ -1,24 +1,104 @@
 {
   "questions": [
-    { "q": "芸術的なものや、抽象的な概念について考えるのが好きだ", "dimension": "Openness", "direction": "+" },
-    { "q": "物事は慣れ親しんだ、いつものやり方で進める方が快適だ", "dimension": "Openness", "direction": "-" },
-    { "q": "一度決めたことは、最後までやり遂げないと気が済まない", "dimension": "Conscientiousness", "direction": "+" },
-    { "q": "細かい計画を立てるより、その場の状況に合わせて動きたい", "dimension": "Conscientiousness", "direction": "-" },
-    { "q": "パーティーや集まりなど、人と交流する場に行くと元気になる", "dimension": "Extraversion", "direction": "+" },
-    { "q": "静かな場所で一人で過ごす時間がないと、疲れ果ててしまう", "dimension": "Extraversion", "direction": "-" },
-    { "q": "他人の気持ちを察し、その人のために行動することが多い", "dimension": "Agreeableness", "direction": "+" },
-    { "q": "自分の意見が他人と違っていても、はっきりと主張できる", "dimension": "Agreeableness", "direction": "-" },
-    { "q": "予期せぬ問題が起きても、あまり動じず冷静に対処できる", "dimension": "StressTolerance", "direction": "+" },
-    { "q": "些細なことで不安になったり、気分が落ち込んだりしやすい", "dimension": "StressTolerance", "direction": "-" },
-    { "q": "物事を判断する時、具体的な事実やデータを重視する", "dimension": "InformationStyle", "direction": "+" },
-    { "q": "物事の全体像や、将来の可能性について考えるのが好きだ", "dimension": "InformationStyle", "direction": "-" },
-    { "q": "決断を下す時、論理的な正しさや合理性を最も優先する", "dimension": "DecisionMaking", "direction": "+" },
-    { "q": "決断を下す時、関係者の感情や人間関係への影響を重視する", "dimension": "DecisionMaking", "direction": "-" },
-    { "q": "他者からの評価よりも、自分自身の興味や探求心が原動力だ", "dimension": "MotivationSource", "direction": "+" },
-    { "q": "明確な目標や報酬が与えられると、やる気が格段に上がる", "dimension": "MotivationSource", "direction": "-" },
-    { "q": "まだ誰もやったことのない、新しいアイデアを試すのが好きだ", "dimension": "ValuePursuit", "direction": "+" },
-    { "q": "成功している方法を分析し、自分のやり方に応用するのが得意だ", "dimension": "ValuePursuit", "direction": "-" },
-    { "q": "一人で集中して作業する環境で、最もパフォーマンスが上がる", "dimension": "WorkStyle", "direction": "+" },
-    { "q": "多様な意見を出し合えるチームで作業する方が良い結果が出る", "dimension": "WorkStyle", "direction": "-" }
+    {
+      "q": "新しいアイデアや斬新な表現方法を試すことにワクワクする",
+      "dimension": "Openness",
+      "direction": "+"
+    },
+    {
+      "q": "動画制作では、確立された手法や定番の構成を使う方が安心する",
+      "dimension": "Openness",
+      "direction": "-"
+    },
+    {
+      "q": "芸術作品や抽象的な概念について考えることが好きだ",
+      "dimension": "Openness",
+      "direction": "+"
+    },
+    {
+      "q": "実用的で具体的な内容の動画を作る方が得意だと思う",
+      "dimension": "Openness",
+      "direction": "-"
+    },
+    {
+      "q": "動画の投稿スケジュールや制作計画をしっかり立てて守りたい",
+      "dimension": "Conscientiousness",
+      "direction": "+"
+    },
+    {
+      "q": "細かい計画よりも、その時の気分や状況に合わせて動きたい",
+      "dimension": "Conscientiousness",
+      "direction": "-"
+    },
+    {
+      "q": "一度決めた企画は、最後まで責任を持ってやり遂げたい",
+      "dimension": "Conscientiousness",
+      "direction": "+"
+    },
+    {
+      "q": "編集作業などの地道な工程は、できれば簡略化したい",
+      "dimension": "Conscientiousness",
+      "direction": "-"
+    },
+    {
+      "q": "視聴者とのコメントのやり取りや交流でエネルギーをもらえる",
+      "dimension": "Extraversion",
+      "direction": "+"
+    },
+    {
+      "q": "一人で静かに作業する時間がないと、疲れてしまう",
+      "dimension": "Extraversion",
+      "direction": "-"
+    },
+    {
+      "q": "ライブ配信やコラボ企画など、人前に出る活動が楽しい",
+      "dimension": "Extraversion",
+      "direction": "+"
+    },
+    {
+      "q": "顔出しや声出しは避けたい、作品で語りたい",
+      "dimension": "Extraversion",
+      "direction": "-"
+    },
+    {
+      "q": "視聴者の気持ちに寄り添った、優しいコンテンツを作りたい",
+      "dimension": "Agreeableness",
+      "direction": "+"
+    },
+    {
+      "q": "自分の主張や意見を、はっきりと伝えるスタイルが好きだ",
+      "dimension": "Agreeableness",
+      "direction": "-"
+    },
+    {
+      "q": "批判的なコメントを見ると、相手の立場も理解しようと努める",
+      "dimension": "Agreeableness",
+      "direction": "+"
+    },
+    {
+      "q": "競争や論争を恐れず、自分の道を突き進むタイプだ",
+      "dimension": "Agreeableness",
+      "direction": "-"
+    },
+    {
+      "q": "再生数が伸びない時期でも、落ち着いて次の一手を考えられる",
+      "dimension": "Neuroticism",
+      "direction": "-"
+    },
+    {
+      "q": "些細な批判や数字の変動で、不安になったり落ち込んだりしやすい",
+      "dimension": "Neuroticism",
+      "direction": "+"
+    },
+    {
+      "q": "予期せぬトラブルが起きても、冷静に対処できる自信がある",
+      "dimension": "Neuroticism",
+      "direction": "-"
+    },
+    {
+      "q": "将来への不安や焦りを感じることが多い",
+      "dimension": "Neuroticism",
+      "direction": "+"
+    }
   ]
 }

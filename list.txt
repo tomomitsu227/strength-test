@@ -1,0 +1,37 @@
+フォルダー パスの一覧
+ボリューム シリアル番号は B62B-031E です
+C:.
+|   .gitignore
+|   list.txt
+|   README.md
+|   
++---backend
+|       app.py
+|       ipaexg.ttf
+|       pdf_generator_final.py
+|       requirements.txt
+|       
++---data
+|       analysis_patterns.json
+|       questions.json
+|       type_logic.json
+|       
+\---frontend
+    |   next-env.d.ts
+    |   next.config.js
+    |   package.json
+    |   postcss.config.js
+    |   tailwind.config.js
+    |   tsconfig.json
+    |   
+    +---app
+    |       globals.css
+    |       layout.tsx
+    |       page.tsx
+    |       styles2.css
+    |       styles3.css
+    |       
+    +---pages
+    \---public
+            hero.jpg
+            

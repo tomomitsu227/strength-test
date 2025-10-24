@@ -1,4 +1,4 @@
-# backend/pdf_generator_final.py - 完全改善版
+# backend/pdf_generator_final.py - 文字化け完全解決＆シンプル化版
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
@@ -6,7 +6,6 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
 from reportlab.platypus import Image as RLImage
-from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.enums import TA_LEFT, TA_CENTER
@@ -14,49 +13,43 @@ from io import BytesIO
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
 import numpy as np
-from matplotlib.patches import Circle
-import os
 
-# 日本語フォントの登録
-font_path = "ipaexg.ttf"  # backend直下
-pdfmetrics.registerFont(TTFont('IPAexGothic', font_path))
+# ===== 日本語フォントの登録（ipaexg.ttf強制指定） =====
+FONT_PATH = "ipaexg.ttf"
+pdfmetrics.registerFont(TTFont('IPAexGothic', FONT_PATH))
 FONT_NAME = 'IPAexGothic'
 
-# カラー定義 (Webページと同じ配色)
-PRIMARY_COLOR = colors.HexColor('#EF4444')  # 赤
-SECONDARY_COLOR = colors.HexColor('#10B981')  # 緑
-BACKGROUND_LIGHT = colors.HexColor('#F9FAFB')  # 薄いグレー
-TEXT_COLOR = colors.HexColor('#1F2937')  # ダークグレー
-BORDER_COLOR = colors.HexColor('#E5E7EB')  # ボーダー用グレー
+# カラー定義
+PRIMARY_COLOR = colors.HexColor('#EF4444')
+SECONDARY_COLOR = colors.HexColor('#10B981')
+TEXT_COLOR = colors.HexColor('#1F2937')
+BORDER_COLOR = colors.HexColor('#E5E7EB')
 
 
-def create_radar_chart(scores, filename='radar_chart.png'):
+def create_radar_chart(scores, filename='/tmp/radar_chart.png'):
     """
-    レーダーチャートを生成してPNGファイルとして保存
+    レーダーチャートを生成（7次元）
     """
     # 日本語ラベル
-    labels = ['開放性', '誠実性', '外向性', '協調性', 'ストレス耐性',
-              '情報処理', '意思決定', '動機源泉', '価値追求', '作業スタイル']
+    labels = ['独創性', '計画性', '社交性', '共感力', '精神的安定性', '創作スタイル', '協働適性']
     
-    # スコアの取得 (0-10のスケール)
+    # スコアの取得
     values = [
-        scores.get('Openness', 5),
-        scores.get('Conscientiousness', 5),
-        scores.get('Extraversion', 5),
-        scores.get('Agreeableness', 5),
-        scores.get('StressTolerance', 5),
-        scores.get('InformationStyle', 5),
-        scores.get('DecisionMaking', 5),
-        scores.get('MotivationSource', 5),
-        scores.get('ValuePursuit', 5),
-        scores.get('WorkStyle', 5)
+        scores.get('独創性', 5),
+        scores.get('計画性', 5),
+        scores.get('社交性', 5),
+        scores.get('共感力', 5),
+        scores.get('精神的安定性', 5),
+        scores.get('創作スタイル', 5),
+        scores.get('協働適性', 5)
     ]
     
     # 角度の計算
     num_vars = len(labels)
     angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
-    values += values[:1]  # 最初の値を最後に追加して円を閉じる
+    values += values[:1]
     angles += angles[:1]
     
     # グラフの作成
@@ -68,10 +61,14 @@ def create_radar_chart(scores, filename='radar_chart.png'):
     
     # 軸の設定
     ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(labels, size=10)
+    
+    # 日本語フォントの設定
+    font_prop = fm.FontProperties(fname=FONT_PATH)
+    ax.set_xticklabels(labels, fontproperties=font_prop, size=11)
+    
     ax.set_ylim(0, 10)
     ax.set_yticks([2, 4, 6, 8, 10])
-    ax.set_yticklabels(['2', '4', '6', '8', '10'], size=8)
+    ax.set_yticklabels(['2', '4', '6', '8', '10'], size=9)
     ax.grid(True, linestyle='--', alpha=0.5)
     
     # 背景色
@@ -86,49 +83,9 @@ def create_radar_chart(scores, filename='radar_chart.png'):
     return filename
 
 
-def create_progress_bar_image(score, label, filename='progress.png'):
-    """
-    プログレスバーの画像を生成
-    """
-    fig, ax = plt.subplots(figsize=(6, 0.8))
-    
-    # バーの描画
-    ax.barh(0, 100, height=0.5, color='#E5E7EB', edgecolor='none')
-    ax.barh(0, score, height=0.5, color='#EF4444', edgecolor='none')
-    
-    # テキスト
-    ax.text(-5, 0, label, ha='right', va='center', fontsize=10, weight='bold')
-    ax.text(score + 2, 0, f'{score}%', ha='left', va='center', fontsize=10)
-    
-    # 軸の設定
-    ax.set_xlim(-20, 105)
-    ax.set_ylim(-1, 1)
-    ax.axis('off')
-    
-    plt.tight_layout()
-    plt.savefig(filename, dpi=100, bbox_inches='tight', facecolor='white')
-    plt.close()
-    
-    return filename
-
-
 def generate_pdf_report_final(user_name, data):
     """
     診断結果のPDFレポートを生成
-    
-    Args:
-        user_name: ユーザー名
-        data: 診断結果データ(dict)
-            - main_core_name: メインコア名
-            - sub_core_title: サブコアタイトル
-            - suited_for: 向いていること
-            - not_suited_for: 向いていないこと
-            - synthesis: 総合分析
-            - radar_scores: レーダーチャート用のスコア
-            - data_analysis: データ分析結果
-    
-    Returns:
-        BytesIO: PDFのバイナリデータ
     """
     buffer = BytesIO()
     
@@ -142,10 +99,9 @@ def generate_pdf_report_final(user_name, data):
         bottomMargin=20*mm
     )
     
-    # スタイルの定義
+    # スタイルの定義（すべてIPAexGothicを使用）
     styles = getSampleStyleSheet()
     
-    # カスタムスタイル
     title_style = ParagraphStyle(
         'CustomTitle',
         parent=styles['Heading1'],
@@ -205,8 +161,6 @@ def generate_pdf_report_final(user_name, data):
     
     # ===== タイトルページ =====
     story.append(Spacer(1, 30*mm))
-    
-    # メインタイトル
     story.append(Paragraph("動画クリエイター特性診断", title_style))
     story.append(Spacer(1, 10*mm))
     
@@ -224,59 +178,20 @@ def generate_pdf_report_final(user_name, data):
     # ===== レーダーチャート =====
     story.append(Paragraph("あなたの特性プロファイル", heading_style))
     
-    # レーダーチャートの生成
     radar_scores = data.get('radar_scores', {})
     if radar_scores:
-        radar_file = create_radar_chart(radar_scores, '/tmp/radar_chart.png')
+        radar_file = create_radar_chart(radar_scores)
         img = RLImage(radar_file, width=140*mm, height=140*mm)
         story.append(img)
         story.append(Spacer(1, 10*mm))
     
     story.append(PageBreak())
     
-    # ===== あなたのユニークさ分析 =====
-    data_analysis = data.get('data_analysis', {})
-    if data_analysis:
-        story.append(Paragraph("ユニーク分析", heading_style))
-        story.append(Spacer(1, 5*mm))
-        
-        # 回答の明確さ
-        extremeness_score = data_analysis.get('extremeness_score', 0)
-        extremeness_comment = data_analysis.get('extremeness_comment', '')
-        
-        story.append(Paragraph(f"<b>回答の明確さ: {extremeness_score}%</b>", body_style))
-        
-        # プログレスバー(簡易版 - テーブルで表現)
-        progress_table = Table(
-            [[' ' * int(extremeness_score/2), ' ' * int((100-extremeness_score)/2)]],
-            colWidths=[extremeness_score*1.5*mm, (100-extremeness_score)*1.5*mm]
-        )
-        progress_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (0, 0), PRIMARY_COLOR),
-            ('BACKGROUND', (1, 0), (1, 0), BORDER_COLOR),
-            ('GRID', (0, 0), (-1, -1), 0.5, BORDER_COLOR)
-        ]))
-        story.append(progress_table)
-        story.append(Spacer(1, 3*mm))
-        
-        story.append(Paragraph(extremeness_comment, box_style))
-        story.append(Spacer(1, 8*mm))
-        
-        # 最も特徴的な才能
-        unique_trait = data_analysis.get('most_unique_trait', '')
-        uniqueness_comment = data_analysis.get('uniqueness_comment', '')
-        
-        if unique_trait:
-            story.append(Paragraph(f"<b>最も特徴的な才能: {unique_trait}</b>", body_style))
-            story.append(Paragraph(uniqueness_comment, box_style))
-            story.append(Spacer(1, 10*mm))
-    
     # ===== 向いていること =====
     suited_for = data.get('suited_for', '')
     if suited_for:
         story.append(Paragraph("あなたに向いていること", heading_style))
         
-        # ボックススタイルのテーブル
         suited_table = Table(
             [[Paragraph(suited_for, box_style)]],
             colWidths=[170*mm]
@@ -333,47 +248,31 @@ def generate_pdf_report_final(user_name, data):
     
     # PDFの生成
     doc.build(story)
-    
-    # バッファの先頭に戻す
     buffer.seek(0)
     
     return buffer
 
 
-# テスト用のコード
 if __name__ == '__main__':
-    # サンプルデータ
+    # テスト用
     test_data = {
         'main_core_name': '孤高のアーティスト',
         'sub_core_title': '緻密な世界観の構築者',
-        'suited_for': 'あなたの回答からは、独創的なアイデアを具体的な計画に落とし込み、一人で着実に実行する能力が高いことが示唆されます。',
-        'not_suited_for': '即興性が求められるライブ配信や、予測不能な状況への対応は、あなたの特性とは異なるかもしれません。',
-        'synthesis': '内向的で独自の感性を持ちながら、計画性を重んじる傾向が見られます。',
+        'suited_for': 'テスト向いていること',
+        'not_suited_for': 'テスト意識すると良い点',
+        'synthesis': 'テスト総合分析',
         'radar_scores': {
-            'Openness': 8.5,
-            'Conscientiousness': 7.0,
-            'Extraversion': 2.5,
-            'Agreeableness': 5.0,
-            'StressTolerance': 5.5,
-            'InformationStyle': 4.0,
-            'DecisionMaking': 6.5,
-            'MotivationSource': 8.0,
-            'ValuePursuit': 8.5,
-            'WorkStyle': 9.0
-        },
-        'data_analysis': {
-            'extremeness_score': 65,
-            'extremeness_comment': 'あなたは多くの事柄に対して自分の意見をしっかり持っているタイプです。',
-            'most_unique_trait': '外向性',
-            'uniqueness_comment': 'あなたのビッグファイブ特性の中で、平均的な傾向から最も大きく離れているのは「外向性」です。'
+            '独創性': 8.5,
+            '計画性': 7.0,
+            '社交性': 2.5,
+            '共感力': 5.0,
+            '精神的安定性': 5.5,
+            '創作スタイル': 8.0,
+            '協働適性': 3.5
         }
     }
     
-    # PDF生成
-    pdf_buffer = generate_pdf_report_final('テストユーザー', test_data)
-    
-    # ファイルとして保存
+    pdf_buffer = generate_pdf_report_final('テスト', test_data)
     with open('test_report.pdf', 'wb') as f:
         f.write(pdf_buffer.getvalue())
-    
-    print("テストPDFを生成しました: test_report.pdf")
+    print("テストPDF生成完了")
