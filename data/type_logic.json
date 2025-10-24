@@ -2,221 +2,34 @@
   "scoring_method": "cosine_similarity_bigfive",
   "description": "ビッグファイブ5特性を測定し、7次元のクリエイタープロファイルを算出",
   "radar_dimensions": {
-    "独創性": {
-      "english": "Creativity",
-      "calculation": "Openness",
-      "description": "新しいアイデアや表現への好奇心"
-    },
-    "計画性": {
-      "english": "Planning",
-      "calculation": "Conscientiousness",
-      "description": "スケジュール管理と継続力"
-    },
-    "社交性": {
-      "english": "Sociability",
-      "calculation": "Extraversion",
-      "description": "人との交流や表舞台での活動"
-    },
-    "共感力": {
-      "english": "Empathy",
-      "calculation": "Agreeableness",
-      "description": "視聴者への優しさと配慮"
-    },
-    "精神的安定性": {
-      "english": "Stability",
-      "calculation": "5 - Neuroticism",
-      "description": "ストレスへの耐性と冷静さ"
-    },
-    "創作スタイル": {
-      "english": "CreativeStyle",
-      "calculation": "(Openness * 0.6) + (5 - Conscientiousness * 0.4)",
-      "description": "自由な発想型か計画重視型か"
-    },
-    "協働適性": {
-      "english": "Collaboration",
-      "calculation": "(Extraversion * 0.5) + (Agreeableness * 0.5)",
-      "description": "チーム作業への適性"
-    }
+    "独創性": { "english": "Creativity", "calculation": "Openness" },
+    "計画性": { "english": "Planning", "calculation": "Conscientiousness" },
+    "社交性": { "english": "Sociability", "calculation": "Extraversion" },
+    "共感力": { "english": "Empathy", "calculation": "Agreeableness" },
+    "精神的安定性": { "english": "Stability", "calculation": "5 - Neuroticism" },
+    "創作スタイル": { "english": "CreativeStyle", "calculation": "(Openness) - (Conscientiousness)" },
+    "協働適性": { "english": "Collaboration", "calculation": "(Extraversion) + (Agreeableness)" }
   },
   "main_core_profiles": {
-    "Solitary Artist": {
-      "japanese_name": "孤高のアーティスト",
-      "description": "独創的で内向的、一人での創作を好む",
-      "ideal_scores": {
-        "独創性": 4.0,
-        "計画性": 2.5,
-        "社交性": 1.5,
-        "共感力": 2.5,
-        "精神的安定性": 3.0,
-        "創作スタイル": 4.0,
-        "協働適性": 2.0
-      }
-    },
-    "Visionary Leader": {
-      "japanese_name": "ビジョナリーリーダー",
-      "description": "革新的で外向的、チームを導く",
-      "ideal_scores": {
-        "独創性": 4.0,
-        "計画性": 3.5,
-        "社交性": 4.5,
-        "共感力": 3.5,
-        "精神的安定性": 4.0,
-        "創作スタイル": 3.5,
-        "協働適性": 4.5
-      }
-    },
-    "Knowledge Seeker": {
-      "japanese_name": "知の探求者",
-      "description": "好奇心旺盛で内向的、深い学びを追求",
-      "ideal_scores": {
-        "独創性": 4.5,
-        "計画性": 4.0,
-        "社交性": 2.0,
-        "共感力": 3.0,
-        "精神的安定性": 3.5,
-        "創作スタイル": 4.0,
-        "協働適性": 2.5
-      }
-    },
-    "Spotlight Pioneer": {
-      "japanese_name": "スポットライトパイオニア",
-      "description": "目立つのが好きで革新的",
-      "ideal_scores": {
-        "独創性": 3.5,
-        "計画性": 2.5,
-        "社交性": 4.5,
-        "共感力": 3.0,
-        "精神的安定性": 4.0,
-        "創作スタイル": 3.5,
-        "協働適性": 4.0
-      }
-    },
-    "Team Captain": {
-      "japanese_name": "チームキャプテン",
-      "description": "協調的で外向的、チームをまとめる",
-      "ideal_scores": {
-        "独創性": 2.5,
-        "計画性": 4.0,
-        "社交性": 4.0,
-        "共感力": 4.5,
-        "精神的安定性": 3.5,
-        "創作スタイル": 2.5,
-        "協働適性": 4.5
-      }
-    },
-    "System Architect": {
-      "japanese_name": "システムアーキテクト",
-      "description": "計画的で論理的、システムを構築",
-      "ideal_scores": {
-        "独創性": 2.5,
-        "計画性": 4.5,
-        "社交性": 2.5,
-        "共感力": 2.5,
-        "精神的安定性": 4.0,
-        "創作スタイル": 2.0,
-        "協働適性": 2.5
-      }
-    },
-    "Community Organizer": {
-      "japanese_name": "コミュニティオーガナイザー",
-      "description": "社交的で協調的",
-      "ideal_scores": {
-        "独創性": 2.5,
-        "計画性": 3.0,
-        "社交性": 4.5,
-        "共感力": 4.5,
-        "精神的安定性": 3.5,
-        "創作スタイル": 2.5,
-        "協働適性": 4.5
-      }
-    },
-    "Trend Hacker": {
-      "japanese_name": "トレンドハッカー",
-      "description": "データ分析に優れ、効率的",
-      "ideal_scores": {
-        "独創性": 2.0,
-        "計画性": 3.5,
-        "社交性": 2.5,
-        "共感力": 2.0,
-        "精神的安定性": 4.0,
-        "創作スタイル": 2.0,
-        "協働適性": 2.5
-      }
-    },
-    "Passionate Evangelist": {
-      "japanese_name": "情熱的な伝道師",
-      "description": "熱意があり外向的",
-      "ideal_scores": {
-        "独創性": 3.0,
-        "計画性": 2.5,
-        "社交性": 4.0,
-        "共感力": 3.5,
-        "精神的安定性": 3.0,
-        "創作スタイル": 3.5,
-        "協働適性": 4.0
-      }
-    },
-    "Empathetic Storyteller": {
-      "japanese_name": "共感的なストーリーテラー",
-      "description": "感受性豊かで内向的",
-      "ideal_scores": {
-        "独創性": 3.5,
-        "計画性": 2.5,
-        "社交性": 2.0,
-        "共感力": 4.5,
-        "精神的安定性": 2.5,
-        "創作スタイル": 3.5,
-        "協働適性": 3.0
-      }
-    },
-    "Practical Entertainer": {
-      "japanese_name": "実践的なエンターテイナー",
-      "description": "社交的で実用的",
-      "ideal_scores": {
-        "独創性": 2.5,
-        "計画性": 3.0,
-        "社交性": 4.0,
-        "共感力": 3.5,
-        "精神的安定性": 3.5,
-        "創作スタイル": 2.5,
-        "協働適性": 4.0
-      }
-    },
-    "Supportive Producer": {
-      "japanese_name": "縁の下のプロデューサー",
-      "description": "支援的で協調的",
-      "ideal_scores": {
-        "独創性": 2.0,
-        "計画性": 4.0,
-        "社交性": 3.0,
-        "共感力": 4.5,
-        "精神的安定性": 3.5,
-        "創作スタイル": 2.0,
-        "協働適性": 4.0
-      }
-    }
+    "Solitary Artist": { "ideal_scores": { "独創性": 8.5, "計画性": 5.0, "社交性": 1.5, "共感力": 5.0, "精神的安定性": 6.0, "創作スタイル": 8.0, "協働適性": 3.0 } },
+    "Visionary Leader": { "ideal_scores": { "独創性": 8.0, "計画性": 7.0, "社交性": 9.0, "共感力": 7.0, "精神的安定性": 8.0, "創作スタイル": 6.5, "協働適性": 8.0 } },
+    "Knowledge Seeker": { "ideal_scores": { "独創性": 9.0, "計画性": 8.0, "社交性": 2.0, "共感力": 6.0, "精神的安定性": 7.0, "創作スタイル": 7.0, "協働適性": 4.0 } },
+    "Spotlight Pioneer": { "ideal_scores": { "独創性": 7.0, "計画性": 3.0, "社交性": 9.0, "共感力": 6.0, "精神的安定性": 8.0, "創作スタイル": 8.0, "協働適性": 7.5 } },
+    "Team Captain": { "ideal_scores": { "独創性": 4.0, "計画性": 8.0, "社交性": 8.0, "共感力": 9.0, "精神的安定性": 7.0, "創作スタイル": 3.0, "協働適性": 8.5 } },
+    "System Architect": { "ideal_scores": { "独創性": 3.0, "計画性": 9.0, "社交性": 3.0, "共感力": 4.0, "精神的安定性": 8.0, "創作スタイル": 2.0, "協働適性": 3.5 } },
+    "Community Organizer": { "ideal_scores": { "独創性": 4.0, "計画性": 6.0, "社交性": 9.0, "共感力": 9.0, "精神的安定性": 7.0, "創作スタイル": 4.0, "協働適性": 9.0 } },
+    "Trend Hacker": { "ideal_scores": { "独創性": 2.0, "計画性": 7.0, "社交性": 3.0, "共感力": 3.0, "精神的安定性": 8.0, "創作スタイル": 2.5, "協働適性": 3.0 } },
+    "Passionate Evangelist": { "ideal_scores": { "独創性": 6.0, "計画性": 4.0, "社交性": 8.0, "共感力": 7.0, "精神的安定性": 6.0, "創作スタイル": 7.0, "協働適性": 7.5 } },
+    "Empathetic Storyteller": { "ideal_scores": { "独創性": 7.0, "計画性": 4.0, "社交性": 2.0, "共感力": 9.0, "精神的安定性": 3.0, "創作スタイル": 7.5, "協働適性": 5.5 } },
+    "Practical Entertainer": { "ideal_scores": { "独創性": 4.0, "計画性": 6.0, "社交性": 8.0, "共感力": 7.0, "精神的安定性": 7.0, "創作スタイル": 4.0, "協働適性": 7.5 } },
+    "Supportive Producer": { "ideal_scores": { "独創性": 3.0, "計画性": 8.0, "社交性": 6.0, "共感力": 9.0, "精神的安定性": 7.0, "創作スタイル": 2.5, "協働適性": 7.5 } }
   },
   "sub_cores": {
-    "The Planner": {
-      "japanese_name": "計画者",
-      "condition": "計画性 > 3.5"
-    },
-    "The Analyst": {
-      "japanese_name": "分析者",
-      "condition": "精神的安定性 > 3.5 AND 独創性 > 3.0"
-    },
-    "The Harmonizer": {
-      "japanese_name": "調和者",
-      "condition": "共感力 > 3.5"
-    },
-    "The Accelerator": {
-      "japanese_name": "加速者",
-      "condition": "計画性 < 2.5 AND 社交性 > 3.0"
-    },
-    "The Deep-Diver": {
-      "japanese_name": "深層探求者",
-      "condition": "独創性 > 3.5 AND 社交性 < 3.0"
-    }
+    "The Planner": { "condition": "計画性 > 7.0" },
+    "The Analyst": { "condition": "精神的安定性 > 6.5 AND 独創性 > 6.0" },
+    "The Harmonizer": { "condition": "共感力 > 7.5" },
+    "The Accelerator": { "condition": "計画性 < 4.0 AND 社交性 > 6.0" },
+    "The Deep-Diver": { "condition": "独創性 > 7.5 AND 社交性 < 4.0" }
   },
   "fallback_main_core": "Practical Entertainer"
 }
