@@ -136,23 +136,12 @@ export default function CreatorDiagnosisPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         <div className="container mx-auto px-4 py-16">
-          {/* ヒーロー画像 */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             className="text-center mb-12"
           >
-            <div className="relative w-full max-w-4xl mx-auto mb-8 rounded-2xl overflow-hidden shadow-2xl">
-              <Image
-                src="/hero.jpg"
-                alt="動画クリエイター"
-                width={1200}
-                height={600}
-                className="w-full h-auto"
-                priority
-              />
-            </div>
             <h1 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
               動画クリエイター特性診断
             </h1>
@@ -268,11 +257,11 @@ export default function CreatorDiagnosisPage() {
 
               <div className="space-y-4">
                 {[
-                  { value: 1, label: '全く当てはまらない' },
-                  { value: 2, label: 'あまり当てはまらない' },
-                  { value: 3, label: 'どちらとも言えない' },
+                  { value: 5, label: 'とても当てはまる' },
                   { value: 4, label: 'やや当てはまる' },
-                  { value: 5, label: 'とても当てはまる' }
+                  { value: 3, label: 'どちらとも言えない' },
+                  { value: 2, label: 'あまり当てはまらない' },
+                  { value: 1, label: '全く当てはまらない' }
                 ].map((option) => (
                   <button
                     key={option.value}
@@ -324,7 +313,6 @@ export default function CreatorDiagnosisPage() {
 
   // 結果表示画面
   if (result) {
-    // 7次元レーダーチャートラベル
     const radarLabels = [
       '独創性',
       '計画性',
@@ -375,12 +363,6 @@ export default function CreatorDiagnosisPage() {
       }
     };
 
-    // 文字数調整用関数（120文字前後に制限）
-    const truncateText = (text: string, maxLength: number = 120) => {
-      if (text.length <= maxLength) return text;
-      return text.substring(0, maxLength) + '...';
-    };
-
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 dark:from-gray-900 dark:to-gray-800 py-12 px-4">
         <div className="max-w-4xl mx-auto">
@@ -405,15 +387,15 @@ export default function CreatorDiagnosisPage() {
             transition={{ delay: 0.2 }}
             className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-xl mb-8"
           >
-            <div className="text-center mb-6">
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+            <div className="text-center">
+              <p className="text-lg text-gray-600 dark:text-gray-400 mb-4">
                 あなたは
               </p>
-              <h2 className="text-3xl md:text-4xl font-bold text-red-500 mb-3">
-                {result.main_core_name}
+              <h2 className="text-3xl md:text-4xl font-bold text-red-500">
+                『{result.main_core_name}』
               </h2>
-              <p className="text-xl text-gray-700 dark:text-gray-300">
-                {result.sub_core_title}
+              <p className="text-xl text-gray-700 dark:text-gray-300 mt-3">
+                ～{result.sub_core_title}～
               </p>
             </div>
           </motion.div>
@@ -447,8 +429,8 @@ export default function CreatorDiagnosisPage() {
                 </svg>
                 向いていること
               </h3>
-              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                {truncateText(result.suited_for || '')}
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+                {result.suited_for || ''}
               </p>
             </div>
 
@@ -459,47 +441,11 @@ export default function CreatorDiagnosisPage() {
                 </svg>
                 向いていないこと
               </h3>
-              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                {truncateText(result.not_suited_for || '')}
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+                {result.not_suited_for || ''}
               </p>
             </div>
           </motion.div>
-
-          {/* データ分析（互換性のため残す） */}
-          {result.data_analysis && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-              className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-xl mb-8"
-            >
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-                特性の分析
-              </h3>
-              <div className="space-y-6">
-                {result.data_analysis.extremeness_comment && (
-                  <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-6">
-                    <h4 className="font-bold text-purple-700 dark:text-purple-400 mb-3">
-                      特性の強さ
-                    </h4>
-                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                      {result.data_analysis.extremeness_comment}
-                    </p>
-                  </div>
-                )}
-                {result.data_analysis.uniqueness_comment && (
-                  <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-6">
-                    <h4 className="font-bold text-indigo-700 dark:text-indigo-400 mb-3">
-                      あなたのユニークさ
-                    </h4>
-                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                      {result.data_analysis.uniqueness_comment}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
 
           {/* 総合分析 */}
           <motion.div
