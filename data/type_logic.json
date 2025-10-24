@@ -11,25 +11,25 @@
     "協働適性": { "english": "Collaboration", "calculation": "(Extraversion) + (Agreeableness)" }
   },
   "main_core_profiles": {
-    "Solitary Artist": { "ideal_scores": { "独創性": 8.5, "計画性": 5.0, "社交性": 1.5, "共感力": 5.0, "精神的安定性": 6.0, "創作スタイル": 8.0, "協働適性": 3.0 } },
-    "Visionary Leader": { "ideal_scores": { "独創性": 8.0, "計画性": 7.0, "社交性": 9.0, "共感力": 7.0, "精神的安定性": 8.0, "創作スタイル": 6.5, "協働適性": 8.0 } },
-    "Knowledge Seeker": { "ideal_scores": { "独創性": 9.0, "計画性": 8.0, "社交性": 2.0, "共感力": 6.0, "精神的安定性": 7.0, "創作スタイル": 7.0, "協働適性": 4.0 } },
-    "Spotlight Pioneer": { "ideal_scores": { "独創性": 7.0, "計画性": 3.0, "社交性": 9.0, "共感力": 6.0, "精神的安定性": 8.0, "創作スタイル": 8.0, "協働適性": 7.5 } },
-    "Team Captain": { "ideal_scores": { "独創性": 4.0, "計画性": 8.0, "社交性": 8.0, "共感力": 9.0, "精神的安定性": 7.0, "創作スタイル": 3.0, "協働適性": 8.5 } },
-    "System Architect": { "ideal_scores": { "独創性": 3.0, "計画性": 9.0, "社交性": 3.0, "共感力": 4.0, "精神的安定性": 8.0, "創作スタイル": 2.0, "協働適性": 3.5 } },
-    "Community Organizer": { "ideal_scores": { "独創性": 4.0, "計画性": 6.0, "社交性": 9.0, "共感力": 9.0, "精神的安定性": 7.0, "創作スタイル": 4.0, "協働適性": 9.0 } },
-    "Trend Hacker": { "ideal_scores": { "独創性": 2.0, "計画性": 7.0, "社交性": 3.0, "共感力": 3.0, "精神的安定性": 8.0, "創作スタイル": 2.5, "協働適性": 3.0 } },
-    "Passionate Evangelist": { "ideal_scores": { "独創性": 6.0, "計画性": 4.0, "社交性": 8.0, "共感力": 7.0, "精神的安定性": 6.0, "創作スタイル": 7.0, "協働適性": 7.5 } },
-    "Empathetic Storyteller": { "ideal_scores": { "独創性": 7.0, "計画性": 4.0, "社交性": 2.0, "共感力": 9.0, "精神的安定性": 3.0, "創作スタイル": 7.5, "協働適性": 5.5 } },
-    "Practical Entertainer": { "ideal_scores": { "独創性": 4.0, "計画性": 6.0, "社交性": 8.0, "共感力": 7.0, "精神的安定性": 7.0, "創作スタイル": 4.0, "協働適性": 7.5 } },
-    "Supportive Producer": { "ideal_scores": { "独創性": 3.0, "計画性": 8.0, "社交性": 6.0, "共感力": 9.0, "精神的安定性": 7.0, "創作スタイル": 2.5, "協働適性": 7.5 } }
+    "Solitary Artist": { "ideal_scores": { "Openness": 6, "Conscientiousness": 0, "Extraversion": -6, "Agreeableness": 0, "Neuroticism": -2 } },
+    "Visionary Leader": { "ideal_scores": { "Openness": 5, "Conscientiousness": 4, "Extraversion": 7, "Agreeableness": 4, "Neuroticism": -5 } },
+    "Knowledge Seeker": { "ideal_scores": { "Openness": 7, "Conscientiousness": 6, "Extraversion": -5, "Agreeableness": 2, "Neuroticism": -4 } },
+    "Spotlight Pioneer": { "ideal_scores": { "Openness": 4, "Conscientiousness": -4, "Extraversion": 7, "Agreeableness": 2, "Neuroticism": -5 } },
+    "Team Captain": { "ideal_scores": { "Openness": -2, "Conscientiousness": 6, "Extraversion": 6, "Agreeableness": 7, "Neuroticism": -4 } },
+    "System Architect": { "ideal_scores": { "Openness": -4, "Conscientiousness": 7, "Extraversion": -4, "Agreeableness": -2, "Neuroticism": -5 } },
+    "Community Organizer": { "ideal_scores": { "Openness": -2, "Conscientiousness": 2, "Extraversion": 7, "Agreeableness": 7, "Neuroticism": -4 } },
+    "Trend Hacker": { "ideal_scores": { "Openness": -5, "Conscientiousness": 4, "Extraversion": -4, "Agreeableness": -4, "Neuroticism": -5 } },
+    "Passionate Evangelist": { "ideal_scores": { "Openness": 2, "Conscientiousness": -2, "Extraversion": 6, "Agreeableness": 4, "Neuroticism": -2 } },
+    "Empathetic Storyteller": { "ideal_scores": { "Openness": 4, "Conscientiousness": -2, "Extraversion": -5, "Agreeableness": 7, "Neuroticism": 4 } },
+    "Practical Entertainer": { "ideal_scores": { "Openness": -2, "Conscientiousness": 2, "Extraversion": 6, "Agreeableness": 4, "Neuroticism": -4 } },
+    "Supportive Producer": { "ideal_scores": { "Openness": -4, "Conscientiousness": 6, "Extraversion": 2, "Agreeableness": 7, "Neuroticism": -4 } }
   },
   "sub_cores": {
-    "The Planner": { "condition": "計画性 > 7.0" },
-    "The Analyst": { "condition": "精神的安定性 > 6.5 AND 独創性 > 6.0" },
-    "The Harmonizer": { "condition": "共感力 > 7.5" },
-    "The Accelerator": { "condition": "計画性 < 4.0 AND 社交性 > 6.0" },
-    "The Deep-Diver": { "condition": "独創性 > 7.5 AND 社交性 < 4.0" }
+    "The Planner": { "scores": { "Conscientiousness": 1 } },
+    "The Analyst": { "scores": { "Openness": 1, "Neuroticism": -1 } },
+    "The Harmonizer": { "scores": { "Agreeableness": 1 } },
+    "The Accelerator": { "scores": { "Extraversion": 1, "Conscientiousness": -1 } },
+    "The Deep-Diver": { "scores": { "Openness": 1, "Extraversion": -1 } }
   },
   "fallback_main_core": "Practical Entertainer"
 }
