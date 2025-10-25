@@ -21,34 +21,34 @@ FONT_PATH = os.path.join(BASE_DIR, "ipaexg.ttf")
 pdfmetrics.registerFont(TTFont('IPAexGothic', FONT_PATH))
 FONT_NAME = 'IPAexGothic'
 
-PRIMARY_COLOR = colors.HexColor('#EF4444')
-TEXT_COLOR = colors.HexColor('#1F2937')
+# 色指定をHEX文字列に変更
+PRIMARY_COLOR_HEX = '#EF4444'
+TEXT_COLOR_HEX = '#1F2937'
 BORDER_COLOR = colors.lightgrey
 
 def create_radar_chart_buffer(scores):
     labels = ['独創性', '計画性', '社交性', '共感力', '精神的安定性', '創作スタイル', '協働適性']
     values = [scores.get(label, 5) for label in labels]
     
-    # PDFダウンロードエラーを防ぐため、描画する値を2以上にクリップする
     values_clipped = np.maximum(values, 2)
     
     num_vars = len(labels)
     angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
-    # 閉じた図形にするために、最初の値をリストの最後に追加
     values_to_plot = np.concatenate((values_clipped, [values_clipped[0]]))
     angles += angles[:1]
     
     fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(projection='polar'))
     
-    ax.plot(angles, values_to_plot, 'o-', linewidth=2, color=PRIMARY_COLOR)
-    ax.fill(angles, values_to_plot, alpha=0.25, color=PRIMARY_COLOR)
+    # matplotlibにはHEX文字列を渡す
+    ax.plot(angles, values_to_plot, 'o-', linewidth=2, color=PRIMARY_COLOR_HEX)
+    ax.fill(angles, values_to_plot, alpha=0.25, color=PRIMARY_COLOR_HEX)
     
     ax.set_xticks(angles[:-1])
     
     font_prop = fm.FontProperties(fname=FONT_PATH, size=12)
     ax.set_xticklabels(labels, fontproperties=font_prop)
     
-    ax.set_ylim(2, 10) # 最小値を2に設定
+    ax.set_ylim(2, 10)
     ax.set_yticks([2, 4, 6, 8, 10])
     ax.set_yticklabels(['2', '4', '6', '8', '10'], size=9)
     ax.grid(True, linestyle='--', alpha=0.5)
@@ -70,10 +70,10 @@ def generate_pdf_report_final(user_name, data):
     )
     
     styles = getSampleStyleSheet()
-    title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], fontName=FONT_NAME, fontSize=24, textColor=PRIMARY_COLOR, spaceAfter=12, alignment=TA_CENTER, leading=30)
-    subtitle_style = ParagraphStyle('CustomSubtitle', parent=styles['Heading2'], fontName=FONT_NAME, fontSize=16, textColor=TEXT_COLOR, spaceBefore=20, spaceAfter=10, alignment=TA_CENTER, leading=22)
-    heading_style = ParagraphStyle('CustomHeading', parent=styles['Heading3'], fontName=FONT_NAME, fontSize=14, textColor=PRIMARY_COLOR, spaceBefore=10, spaceAfter=8, leading=18, alignment=TA_LEFT)
-    body_style = ParagraphStyle('CustomBody', parent=styles['BodyText'], fontName=FONT_NAME, fontSize=11, textColor=TEXT_COLOR, leading=18, alignment=TA_LEFT)
+    title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], fontName=FONT_NAME, fontSize=24, textColor=colors.HexColor(PRIMARY_COLOR_HEX), spaceAfter=12, alignment=TA_CENTER, leading=30)
+    subtitle_style = ParagraphStyle('CustomSubtitle', parent=styles['Heading2'], fontName=FONT_NAME, fontSize=16, textColor=colors.HexColor(TEXT_COLOR_HEX), spaceBefore=20, spaceAfter=10, alignment=TA_CENTER, leading=22)
+    heading_style = ParagraphStyle('CustomHeading', parent=styles['Heading3'], fontName=FONT_NAME, fontSize=14, textColor=colors.HexColor(PRIMARY_COLOR_HEX), spaceBefore=10, spaceAfter=8, leading=18, alignment=TA_LEFT)
+    body_style = ParagraphStyle('CustomBody', parent=styles['BodyText'], fontName=FONT_NAME, fontSize=11, textColor=colors.HexColor(TEXT_COLOR_HEX), leading=18, alignment=TA_LEFT)
     
     story = []
     
@@ -97,7 +97,7 @@ def generate_pdf_report_final(user_name, data):
     radar_scores = data.get('radar_scores', {})
     if radar_scores:
         radar_buffer = create_radar_chart_buffer(radar_scores)
-        img = RLImage(radar_buffer, width=120*mm, height=120*mm) # 正円を維持
+        img = RLImage(radar_buffer, width=120*mm, height=120*mm)
         story.append(img)
     
     story.append(PageBreak())
@@ -125,7 +125,7 @@ def generate_pdf_report_final(user_name, data):
 
     not_suited_for = data.get('not_suited_for', [])
     if not_suited_for:
-        content = [Paragraph("向いていないこと", heading_style)] + create_bullet_list(not_suited_for, body_style) # 文言修正
+        content = [Paragraph("向いていないこと", heading_style)] + create_bullet_list(not_suited_for, body_style)
         tbl = Table([content], colWidths=[doc.width], style=box_style, spaceAfter=6*mm)
         story.append(tbl)
     

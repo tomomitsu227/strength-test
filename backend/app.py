@@ -87,27 +87,31 @@ def calculate_creator_personality_final(answers, questions_data, logic_data):
 
 # --- 分析結果生成ロジック ---
 def generate_dynamic_analysis(main_core, sub_core, seven_dimensions, definitions):
-    # 箇条書きリスト生成ロジックの改善
     base_traits = ["独創性", "計画性", "社交性", "共感力", "精神的安定性"]
     sorted_scores = sorted(seven_dimensions.items(), key=lambda item: abs(item[1] - 5), reverse=True)
 
-    high_scores = sorted([item for item in sorted_scores if item[0] in base_traits and item[1] >= 5.0], key=lambda item: item[1], reverse=True)
-    low_scores = sorted([item for item in sorted_scores if item[0] in base_traits and item[1] < 5.0], key=lambda item: item[1])
-
     suited_for_set = set()
     not_suited_for_set = set()
-
     tendencies = definitions["tendencies"]
-    
-    # 上位2つの高い特性から箇条書きを追加
-    for trait, score in high_scores[:2]:
-        suited_for_set.update(tendencies[trait]["high"]["suited"])
-        not_suited_for_set.update(tendencies[trait]["high"]["not_suited"])
-    # 上位2つの低い特性から箇条書きを追加
-    for trait, score in low_scores[:2]:
-        suited_for_set.update(tendencies[trait]["low"]["suited"])
-        not_suited_for_set.update(tendencies[trait]["low"]["not_suited"])
 
+    # 閾値を超える特性を優先的に追加
+    for trait, score in seven_dimensions.items():
+        if trait not in base_traits: continue
+        if score >= 7.0:
+            suited_for_set.update(tendencies[trait]["high"]["suited"])
+            not_suited_for_set.update(tendencies[trait]["high"]["not_suited"])
+        elif score <= 3.0:
+            suited_for_set.update(tendencies[trait]["low"]["suited"])
+            not_suited_for_set.update(tendencies[trait]["low"]["not_suited"])
+    
+    # 箇条書きが少ない場合、最も特徴的なスコアで補完
+    if len(suited_for_set) < 2:
+        for trait, score in sorted_scores:
+            if trait not in base_traits: continue
+            level = "high" if score >= 5 else "low"
+            suited_for_set.update(tendencies[trait][level]["suited"])
+            if len(suited_for_set) >= 2: break
+    
     # 分析結果のまとめを生成（コピーライター視点で改善）
     templates = definitions["synthesis_templates"]
     main_core_name = ANALYSIS_PATTERNS.get(main_core, {}).get("name", main_core)
@@ -139,7 +143,6 @@ def generate_dynamic_analysis(main_core, sub_core, seven_dimensions, definitions
 # グローバル変数でセッション管理
 USER_SESSIONS = {}
 
-# --- APIエンドポイント ---
 @app.route('/api/questions', methods=['GET'])
 def get_questions():
     return jsonify(QUESTIONS_DATA)
@@ -175,17 +178,14 @@ def download_pdf(user_id):
     if user_id in USER_SESSIONS:
         result_data = USER_SESSIONS[user_id]
     else:
-        # サーバー再起動などでセッションが消えた場合のダミーデータ
         return jsonify({'error': '診断セッションが見つかりません。もう一度診断してください。'}), 404
     
     pdf_buffer = generate_pdf_report_final("動画クリエイター特性診断レポート", result_data)
     pdf_buffer.seek(0)
     
     return send_file(
-        pdf_buffer, 
-        mimetype='application/pdf', 
-        as_attachment=True, 
-        download_name=f'creator_core_report_{user_id}.pdf'
+        pdf_buffer, mimetype='application/pdf', 
+        as_attachment=True, download_name=f'creator_core_report_{user_id}.pdf'
     )
 
 @app.route('/api/health', methods=['GET'])
