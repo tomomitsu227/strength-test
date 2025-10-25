@@ -94,51 +94,52 @@ def generate_dynamic_analysis(main_core, sub_core, seven_dimensions, definitions
     not_suited_for_set = set()
     tendencies = definitions["tendencies"]
 
-    # 閾値を超える特性を優先的に追加
+    # 新しい3段階評価で箇条書きを生成
     for trait, score in seven_dimensions.items():
         if trait not in base_traits: continue
-        if score >= 7.0:
-            suited_for_set.update(tendencies[trait]["high"]["suited"])
-            not_suited_for_set.update(tendencies[trait]["high"]["not_suited"])
-        elif score <= 3.0:
-            suited_for_set.update(tendencies[trait]["low"]["suited"])
-            not_suited_for_set.update(tendencies[trait]["low"]["not_suited"])
-    
-    # 箇条書きが少ない場合、最も特徴的なスコアで補完
-    if len(suited_for_set) < 2:
-        for trait, score in sorted_scores:
-            if trait not in base_traits: continue
-            level = "high" if score >= 5 else "low"
-            suited_for_set.update(tendencies[trait][level]["suited"])
-            if len(suited_for_set) >= 2: break
-    
-    # 分析結果のまとめを生成（コピーライター視点で改善）
-    templates = definitions["synthesis_templates"]
-    main_core_name = ANALYSIS_PATTERNS.get(main_core, {}).get("name", main_core)
-    sub_core_description = definitions["sub_core_descriptions"].get(sub_core, "")
+        
+        level = ""
+        if score >= 7.0: level = "high"
+        elif score <= 3.9: level = "low"
+        elif 4.0 <= score <= 6.9: level = "middle"
+        
+        if level:
+            suited_for_set.update(tendencies[trait][level].get("suited", []))
+            not_suited_for_set.update(tendencies[trait][level].get("not_suited", []))
 
+    # 分析結果のまとめを生成
+    templates = definitions["synthesis_templates"]
     trait1_name, trait1_score = sorted_scores[0]
     trait2_name, trait2_score = sorted_scores[1]
 
-    trait1_level = "high" if trait1_score >= 5 else "low"
-    trait2_level = "high" if trait2_score >= 5 else "low"
+    def get_level(score):
+        if score >= 7.0: return "high"
+        if score <= 3.9: return "low"
+        return "middle"
+
+    trait1_level = get_level(trait1_score)
+    trait2_level = get_level(trait2_score)
     
     trait1_desc = templates["traits"][trait1_name][trait1_level]
     trait2_desc = templates["traits"][trait2_name][trait2_level]
 
     conclusion = templates["conclusions"].get(main_core, "個性的なクリエイター")
+    sub_core_description = definitions["sub_core_descriptions"].get(sub_core, "")
 
     synthesis = templates["base"].format(
-        main_core_name=main_core_name,
         sub_core_description=sub_core_description,
-        trait1_name=trait1_name,
-        trait1_desc=trait1_desc,
-        trait2_name=trait2_name,
-        trait2_desc=trait2_desc,
+        trait1_name=trait1_name, trait1_desc=trait1_desc,
+        trait2_name=trait2_name, trait2_desc=trait2_desc,
         conclusion=conclusion
     )
 
-    return list(suited_for_set), list(not_suited_for_set), synthesis
+    # 重複を削除し、適切な数に絞り込む
+    final_suited_for = list(suited_for_set)
+    final_not_suited_for = list(not_suited_for_set)
+    
+    # 最終的な表示数を5〜8個の範囲に調整するロジック（例）
+    # ここでは単純に最大8個に制限
+    return final_suited_for[:8], final_not_suited_for[:8], synthesis
 
 # グローバル変数でセッション管理
 USER_SESSIONS = {}

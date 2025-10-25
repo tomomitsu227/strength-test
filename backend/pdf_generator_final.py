@@ -21,7 +21,6 @@ FONT_PATH = os.path.join(BASE_DIR, "ipaexg.ttf")
 pdfmetrics.registerFont(TTFont('IPAexGothic', FONT_PATH))
 FONT_NAME = 'IPAexGothic'
 
-# 色指定をHEX文字列に変更
 PRIMARY_COLOR_HEX = '#EF4444'
 TEXT_COLOR_HEX = '#1F2937'
 BORDER_COLOR = colors.lightgrey
@@ -39,7 +38,6 @@ def create_radar_chart_buffer(scores):
     
     fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(projection='polar'))
     
-    # matplotlibにはHEX文字列を渡す
     ax.plot(angles, values_to_plot, 'o-', linewidth=2, color=PRIMARY_COLOR_HEX)
     ax.fill(angles, values_to_plot, alpha=0.25, color=PRIMARY_COLOR_HEX)
     
@@ -48,7 +46,8 @@ def create_radar_chart_buffer(scores):
     font_prop = fm.FontProperties(fname=FONT_PATH, size=12)
     ax.set_xticklabels(labels, fontproperties=font_prop)
     
-    ax.set_ylim(2, 10)
+    # 表示上のy軸の範囲を0-10に設定
+    ax.set_ylim(0, 10)
     ax.set_yticks([2, 4, 6, 8, 10])
     ax.set_yticklabels(['2', '4', '6', '8', '10'], size=9)
     ax.grid(True, linestyle='--', alpha=0.5)
@@ -115,24 +114,37 @@ def generate_pdf_report_final(user_name, data):
     ])
 
     def create_bullet_list(items, style):
+        # Paragraphのリストを直接返すことで、テキストの自動折り返しを有効にする
         return [Paragraph(f"・{item}", style) for item in items]
 
+    def build_card(title, items):
+        if not items:
+            return None
+        # ヘッダーと箇条書きリストを結合
+        content = [Paragraph(title, heading_style)] + create_bullet_list(items, body_style)
+        # Tableを使用して枠線とパディングを適用
+        # TableのセルにParagraphオブジェクトのリストを直接入れることで、自動的に高さが調整される
+        tbl = Table([ [c] for c in content ], colWidths=[doc.width - (box_padding * 2)], style=box_style, spaceAfter=6*mm)
+        return tbl
+
     suited_for = data.get('suited_for', [])
-    if suited_for:
-        content = [Paragraph("向いていること", heading_style)] + create_bullet_list(suited_for, body_style)
-        tbl = Table([content], colWidths=[doc.width], style=box_style, spaceAfter=6*mm)
-        story.append(tbl)
+    suited_card = build_card("向いていること", suited_for)
+    if suited_card:
+        story.append(suited_card)
 
     not_suited_for = data.get('not_suited_for', [])
-    if not_suited_for:
-        content = [Paragraph("向いていないこと", heading_style)] + create_bullet_list(not_suited_for, body_style)
-        tbl = Table([content], colWidths=[doc.width], style=box_style, spaceAfter=6*mm)
-        story.append(tbl)
+    not_suited_card = build_card("向いていないこと", not_suited_for)
+    if not_suited_card:
+        story.append(not_suited_card)
     
     synthesis = data.get('synthesis', '')
     if synthesis:
-        content = [Paragraph("分析結果のまとめ", heading_style), Paragraph(synthesis.replace('\n', '<br/>'), body_style)]
-        tbl = Table([content], colWidths=[doc.width], style=box_style)
+        content = [
+            Paragraph("分析結果のまとめ", heading_style),
+            Paragraph(synthesis.replace('\n', '<br/>'), body_style)
+        ]
+        # こちらも同様にTableでラップ
+        tbl = Table([ [c] for c in content ], colWidths=[doc.width - (box_padding * 2)], style=box_style)
         story.append(tbl)
     
     story.append(Spacer(1, 20*mm))

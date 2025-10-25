@@ -178,7 +178,7 @@ export default function CreatorDiagnosisPage() {
   if (result) {
     const radarLabels = ['独創性','計画性','社交性','共感力','精神的安定性','創作スタイル','協働適性'];
     const radarData = { labels: radarLabels, datasets: [{ label: 'あなたのスコア', data: radarLabels.map(label => result.radar_scores?.[label] || 0), backgroundColor: 'rgba(239,68,68,0.2)', borderColor: '#EF4444', pointBackgroundColor: '#EF4444', pointBorderColor: '#fff', pointHoverBackgroundColor: '#fff', pointHoverBorderColor: '#EF4444' }]};
-    const radarOptions = { scales: { r: { min: 2, max: 10, ticks: { stepSize: 2, color: '#6B7280', font: { size: 12 }}, pointLabels: { font: { size: 14, family: 'Noto Sans JP, sans-serif' }, color: '#374151' }, grid: { color: '#E5E7EB' }}}, plugins: { legend: { display: false }}};
+    const radarOptions = { scales: { r: { min: 0, max: 10, ticks: { stepSize: 2, color: '#6B7280', font: { size: 12 }}, pointLabels: { font: { size: 14, family: 'Noto Sans JP, sans-serif' }, color: '#374151' }, grid: { color: '#E5E7EB' }}}, plugins: { legend: { display: false }}};
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 dark:from-gray-900 dark:to-gray-800 py-12 px-4">
         <div className="max-w-4xl mx-auto">
@@ -195,7 +195,9 @@ export default function CreatorDiagnosisPage() {
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-xl mb-8">
             <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">あなたの特性プロファイル</h3>
-            <div className="max-w-2xl mx-auto"><Radar data={radarData} options={radarOptions} /></div>
+            <div className="max-w-2xl mx-auto bg-white p-4 rounded-lg">
+              <Radar data={radarData} options={radarOptions} />
+            </div>
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="grid md:grid-cols-2 gap-6 mb-8">
             <div className="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 rounded-r-2xl p-6 shadow-lg">
