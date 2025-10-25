@@ -43,17 +43,22 @@ def calculate_creator_personality_final(answers, questions_data, logic_data):
         else:
             big_five_raw[question['dimension']] -= score
     
-    def normalize_score(raw_score, min_val=-8, max_val=8):
+    # スコア正規化関数を修正
+    def normalize_score(raw_score, min_val, max_val):
+        # 0除算を避ける
+        if max_val == min_val:
+            return 5.0
         return ((raw_score - min_val) / (max_val - min_val)) * 10
     
+    # 各スコアの理論上のmin/max値に基づいて正規化
     seven_dimensions = {
-        "独創性": normalize_score(big_five_raw["Openness"]),
-        "計画性": normalize_score(big_five_raw["Conscientiousness"]),
-        "社交性": normalize_score(big_five_raw["Extraversion"]),
-        "共感力": normalize_score(big_five_raw["Agreeableness"]), 
-        "精神的安定性": normalize_score(-big_five_raw["Neuroticism"]),
-        "創作スタイル": normalize_score((big_five_raw["Openness"] - big_five_raw["Conscientiousness"]) / 2),
-        "協働適性": normalize_score((big_five_raw["Extraversion"] + big_five_raw["Agreeableness"]) / 2)
+        "独創性": normalize_score(big_five_raw["Openness"], -8, 8),
+        "計画性": normalize_score(big_five_raw["Conscientiousness"], -8, 8),
+        "社交性": normalize_score(big_five_raw["Extraversion"], -8, 8),
+        "共感力": normalize_score(big_five_raw["Agreeableness"], -8, 8), 
+        "精神的安定性": normalize_score(-big_five_raw["Neuroticism"], -8, 8),
+        "創作スタイル": normalize_score((big_five_raw["Openness"] - big_five_raw["Conscientiousness"]) / 2, -8, 8),
+        "協働適性": normalize_score((big_five_raw["Extraversion"] + big_five_raw["Agreeableness"]) / 2, -8, 8)
     }
     
     dimension_order = ["Openness", "Conscientiousness", "Extraversion", "Agreeableness", "Neuroticism"]
@@ -94,10 +99,8 @@ def generate_dynamic_analysis(main_core, sub_core, seven_dimensions, definitions
     not_suited_for_set = set()
     tendencies = definitions["tendencies"]
 
-    # 新しい3段階評価で箇条書きを生成
     for trait, score in seven_dimensions.items():
         if trait not in base_traits: continue
-        
         level = ""
         if score >= 7.0: level = "high"
         elif score <= 3.9: level = "low"
@@ -107,7 +110,7 @@ def generate_dynamic_analysis(main_core, sub_core, seven_dimensions, definitions
             suited_for_set.update(tendencies[trait][level].get("suited", []))
             not_suited_for_set.update(tendencies[trait][level].get("not_suited", []))
 
-    # 分析結果のまとめを生成
+    # 分析結果のまとめを生成（コピーライター視点で改善）
     templates = definitions["synthesis_templates"]
     trait1_name, trait1_score = sorted_scores[0]
     trait2_name, trait2_score = sorted_scores[1]
@@ -122,24 +125,18 @@ def generate_dynamic_analysis(main_core, sub_core, seven_dimensions, definitions
     
     trait1_desc = templates["traits"][trait1_name][trait1_level]
     trait2_desc = templates["traits"][trait2_name][trait2_level]
-
-    conclusion = templates["conclusions"].get(main_core, "個性的なクリエイター")
+    
     sub_core_description = definitions["sub_core_descriptions"].get(sub_core, "")
+    insight = definitions["synthesis_insights"].get(main_core, "その個性を活かすことが成功の鍵です。")
 
     synthesis = templates["base"].format(
-        sub_core_description=sub_core_description,
         trait1_name=trait1_name, trait1_desc=trait1_desc,
         trait2_name=trait2_name, trait2_desc=trait2_desc,
-        conclusion=conclusion
+        sub_core_description=sub_core_description,
+        insight=insight
     )
 
-    # 重複を削除し、適切な数に絞り込む
-    final_suited_for = list(suited_for_set)
-    final_not_suited_for = list(not_suited_for_set)
-    
-    # 最終的な表示数を5〜8個の範囲に調整するロジック（例）
-    # ここでは単純に最大8個に制限
-    return final_suited_for[:8], final_not_suited_for[:8], synthesis
+    return list(suited_for_set)[:8], list(not_suited_for_set)[:8], synthesis
 
 # グローバル変数でセッション管理
 USER_SESSIONS = {}

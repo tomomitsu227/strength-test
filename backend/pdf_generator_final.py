@@ -27,13 +27,14 @@ BORDER_COLOR = colors.lightgrey
 
 def create_radar_chart_buffer(scores):
     labels = ['独創性', '計画性', '社交性', '共感力', '精神的安定性', '創作スタイル', '協働適性']
-    values = [scores.get(label, 5) for label in labels]
+    values = [scores.get(label, 0) for label in labels] # デフォルトを0に変更
     
-    values_clipped = np.maximum(values, 2)
+    # 描画する最小値は0だが、エラー対策で内部的に微小な値を加えることも考慮
+    # ただし、ylim(0, 10)で十分な場合が多い
     
     num_vars = len(labels)
     angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
-    values_to_plot = np.concatenate((values_clipped, [values_clipped[0]]))
+    values_to_plot = np.concatenate((values, [values[0]]))
     angles += angles[:1]
     
     fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(projection='polar'))
@@ -46,8 +47,7 @@ def create_radar_chart_buffer(scores):
     font_prop = fm.FontProperties(fname=FONT_PATH, size=12)
     ax.set_xticklabels(labels, fontproperties=font_prop)
     
-    # 表示上のy軸の範囲を0-10に設定
-    ax.set_ylim(0, 10)
+    ax.set_ylim(0, 10) # 最小値を0に設定
     ax.set_yticks([2, 4, 6, 8, 10])
     ax.set_yticklabels(['2', '4', '6', '8', '10'], size=9)
     ax.grid(True, linestyle='--', alpha=0.5)
@@ -114,37 +114,26 @@ def generate_pdf_report_final(user_name, data):
     ])
 
     def create_bullet_list(items, style):
-        # Paragraphのリストを直接返すことで、テキストの自動折り返しを有効にする
         return [Paragraph(f"・{item}", style) for item in items]
 
     def build_card(title, items):
-        if not items:
-            return None
-        # ヘッダーと箇条書きリストを結合
+        if not items: return None
         content = [Paragraph(title, heading_style)] + create_bullet_list(items, body_style)
-        # Tableを使用して枠線とパディングを適用
-        # TableのセルにParagraphオブジェクトのリストを直接入れることで、自動的に高さが調整される
-        tbl = Table([ [c] for c in content ], colWidths=[doc.width - (box_padding * 2)], style=box_style, spaceAfter=6*mm)
+        tbl_content = [ [c] for c in content ]
+        tbl = Table(tbl_content, colWidths=[doc.width - (box_padding * 2)], style=box_style, spaceAfter=6*mm)
         return tbl
 
-    suited_for = data.get('suited_for', [])
-    suited_card = build_card("向いていること", suited_for)
-    if suited_card:
-        story.append(suited_card)
+    suited_card = build_card("向いていること", data.get('suited_for', []))
+    if suited_card: story.append(suited_card)
 
-    not_suited_for = data.get('not_suited_for', [])
-    not_suited_card = build_card("向いていないこと", not_suited_for)
-    if not_suited_card:
-        story.append(not_suited_card)
+    not_suited_card = build_card("向いていないこと", data.get('not_suited_for', []))
+    if not_suited_card: story.append(not_suited_card)
     
     synthesis = data.get('synthesis', '')
     if synthesis:
-        content = [
-            Paragraph("分析結果のまとめ", heading_style),
-            Paragraph(synthesis.replace('\n', '<br/>'), body_style)
-        ]
-        # こちらも同様にTableでラップ
-        tbl = Table([ [c] for c in content ], colWidths=[doc.width - (box_padding * 2)], style=box_style)
+        content = [Paragraph("分析結果のまとめ", heading_style), Paragraph(synthesis.replace('\n', '<br/>'), body_style)]
+        tbl_content = [ [c] for c in content ]
+        tbl = Table(tbl_content, colWidths=[doc.width - (box_padding * 2)], style=box_style)
         story.append(tbl)
     
     story.append(Spacer(1, 20*mm))
