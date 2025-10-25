@@ -2,7 +2,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import mm
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, KeepInFrame
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
 from reportlab.platypus import Image as RLImage
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
@@ -29,23 +29,26 @@ def create_radar_chart_buffer(scores):
     labels = ['独創性', '計画性', '社交性', '共感力', '精神的安定性', '創作スタイル', '協働適性']
     values = [scores.get(label, 5) for label in labels]
     
+    # PDFダウンロードエラーを防ぐため、描画する値を2以上にクリップする
+    values_clipped = np.maximum(values, 2)
+    
     num_vars = len(labels)
     angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
-    values += values[:1]
+    # 閉じた図形にするために、最初の値をリストの最後に追加
+    values_to_plot = np.concatenate((values_clipped, [values_clipped[0]]))
     angles += angles[:1]
     
     fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(projection='polar'))
     
-    ax.plot(angles, values, 'o-', linewidth=2, color=PRIMARY_COLOR)
-    ax.fill(angles, values, alpha=0.25, color=PRIMARY_COLOR)
+    ax.plot(angles, values_to_plot, 'o-', linewidth=2, color=PRIMARY_COLOR)
+    ax.fill(angles, values_to_plot, alpha=0.25, color=PRIMARY_COLOR)
     
     ax.set_xticks(angles[:-1])
     
     font_prop = fm.FontProperties(fname=FONT_PATH, size=12)
     ax.set_xticklabels(labels, fontproperties=font_prop)
     
-    # 最小値を2に設定
-    ax.set_ylim(2, 10)
+    ax.set_ylim(2, 10) # 最小値を2に設定
     ax.set_yticks([2, 4, 6, 8, 10])
     ax.set_yticklabels(['2', '4', '6', '8', '10'], size=9)
     ax.grid(True, linestyle='--', alpha=0.5)
@@ -94,8 +97,7 @@ def generate_pdf_report_final(user_name, data):
     radar_scores = data.get('radar_scores', {})
     if radar_scores:
         radar_buffer = create_radar_chart_buffer(radar_scores)
-        # 正円を維持するためにwidthとheightを同じ値に設定
-        img = RLImage(radar_buffer, width=120*mm, height=120*mm)
+        img = RLImage(radar_buffer, width=120*mm, height=120*mm) # 正円を維持
         story.append(img)
     
     story.append(PageBreak())
@@ -112,32 +114,24 @@ def generate_pdf_report_final(user_name, data):
         ('BOTTOMPADDING', (0, 0), (-1, -1), box_padding),
     ])
 
-    # 箇条書きを整形するヘルパー関数
     def create_bullet_list(items, style):
         return [Paragraph(f"・{item}", style) for item in items]
 
-    # 向いていること
     suited_for = data.get('suited_for', [])
     if suited_for:
         content = [Paragraph("向いていること", heading_style)] + create_bullet_list(suited_for, body_style)
         tbl = Table([content], colWidths=[doc.width], style=box_style, spaceAfter=6*mm)
         story.append(tbl)
 
-    # 向いていないこと
     not_suited_for = data.get('not_suited_for', [])
     if not_suited_for:
-        # 文言を修正
-        content = [Paragraph("向いていないこと", heading_style)] + create_bullet_list(not_suited_for, body_style)
+        content = [Paragraph("向いていないこと", heading_style)] + create_bullet_list(not_suited_for, body_style) # 文言修正
         tbl = Table([content], colWidths=[doc.width], style=box_style, spaceAfter=6*mm)
         story.append(tbl)
     
-    # 総合分析
     synthesis = data.get('synthesis', '')
     if synthesis:
-        content = [
-            Paragraph("分析結果のまとめ", heading_style),
-            Paragraph(synthesis.replace('\n', '<br/>'), body_style)
-        ]
+        content = [Paragraph("分析結果のまとめ", heading_style), Paragraph(synthesis.replace('\n', '<br/>'), body_style)]
         tbl = Table([content], colWidths=[doc.width], style=box_style)
         story.append(tbl)
     

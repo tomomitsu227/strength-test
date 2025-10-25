@@ -15,7 +15,6 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 QUESTIONS_PATH = os.path.join(BASE_DIR, '..', 'data', 'questions.json')
 TYPE_LOGIC_PATH = os.path.join(BASE_DIR, '..', 'data', 'type_logic.json')  
 ANALYSIS_PATTERNS_PATH = os.path.join(BASE_DIR, '..', 'data', 'analysis_patterns.json')
-# 新しいJSONファイルのパスを追加
 TRAIT_DEFINITIONS_PATH = os.path.join(BASE_DIR, '..', 'data', 'trait_definitions.json')
 
 # --- 設定ファイルの読み込み ---
@@ -26,7 +25,6 @@ try:
         TYPE_LOGIC = json.load(f)
     with open(ANALYSIS_PATTERNS_PATH, 'r', encoding='utf-8') as f:
         ANALYSIS_PATTERNS = json.load(f)
-    # 新しいJSONファイルを読み込む
     with open(TRAIT_DEFINITIONS_PATH, 'r', encoding='utf-8') as f:
         TRAIT_DEFINITIONS = json.load(f)
 except Exception as e:
@@ -89,60 +87,54 @@ def calculate_creator_personality_final(answers, questions_data, logic_data):
 
 # --- 分析結果生成ロジック ---
 def generate_dynamic_analysis(main_core, sub_core, seven_dimensions, definitions):
-    # 箇条書きリストの生成
-    suited_for = []
-    not_suited_for = []
-    
-    # 精神的安定性以外の5つの基本特性でループ
+    # 箇条書きリスト生成ロジックの改善
     base_traits = ["独創性", "計画性", "社交性", "共感力", "精神的安定性"]
-    for trait in base_traits:
-        score = seven_dimensions.get(trait, 5)
-        trait_info = definitions["tendencies"].get(trait, {})
-        
-        if score >= 7.0 and "high" in trait_info:
-            suited_for.extend(trait_info["high"].get("suited", []))
-            not_suited_for.extend(trait_info["high"].get("not_suited", []))
-        elif score <= 3.0 and "low" in trait_info:
-            suited_for.extend(trait_info["low"].get("suited", []))
-            not_suited_for.extend(trait_info["low"].get("not_suited", []))
+    sorted_scores = sorted(seven_dimensions.items(), key=lambda item: abs(item[1] - 5), reverse=True)
 
-    # 分析結果のまとめを生成
-    synthesis_phrases = definitions["synthesis_phrases"]
+    high_scores = sorted([item for item in sorted_scores if item[0] in base_traits and item[1] >= 5.0], key=lambda item: item[1], reverse=True)
+    low_scores = sorted([item for item in sorted_scores if item[0] in base_traits and item[1] < 5.0], key=lambda item: item[1])
+
+    suited_for_set = set()
+    not_suited_for_set = set()
+
+    tendencies = definitions["tendencies"]
     
+    # 上位2つの高い特性から箇条書きを追加
+    for trait, score in high_scores[:2]:
+        suited_for_set.update(tendencies[trait]["high"]["suited"])
+        not_suited_for_set.update(tendencies[trait]["high"]["not_suited"])
+    # 上位2つの低い特性から箇条書きを追加
+    for trait, score in low_scores[:2]:
+        suited_for_set.update(tendencies[trait]["low"]["suited"])
+        not_suited_for_set.update(tendencies[trait]["low"]["not_suited"])
+
+    # 分析結果のまとめを生成（コピーライター視点で改善）
+    templates = definitions["synthesis_templates"]
     main_core_name = ANALYSIS_PATTERNS.get(main_core, {}).get("name", main_core)
     sub_core_description = definitions["sub_core_descriptions"].get(sub_core, "")
+
+    trait1_name, trait1_score = sorted_scores[0]
+    trait2_name, trait2_score = sorted_scores[1]
+
+    trait1_level = "high" if trait1_score >= 5 else "low"
+    trait2_level = "high" if trait2_score >= 5 else "low"
     
-    intro = synthesis_phrases["intro"].format(
-        main_core_name=main_core_name, 
-        sub_core_description=sub_core_description
+    trait1_desc = templates["traits"][trait1_name][trait1_level]
+    trait2_desc = templates["traits"][trait2_name][trait2_level]
+
+    conclusion = templates["conclusions"].get(main_core, "個性的なクリエイター")
+
+    synthesis = templates["base"].format(
+        main_core_name=main_core_name,
+        sub_core_description=sub_core_description,
+        trait1_name=trait1_name,
+        trait1_desc=trait1_desc,
+        trait2_name=trait2_name,
+        trait2_desc=trait2_desc,
+        conclusion=conclusion
     )
-    
-    # 最も特徴的な特性を決定
-    sorted_scores = sorted(seven_dimensions.items(), key=lambda item: abs(item[1] - 5), reverse=True)
-    most_significant_trait_name = sorted_scores[0][0]
-    most_significant_score = sorted_scores[0][1]
-    
-    level = "high" if most_significant_score >= 5 else "low"
-    most_significant_trait_phrase = synthesis_phrases["traits"][most_significant_trait_name][level]
 
-    bridge = synthesis_phrases["bridge"].format(
-        most_significant_trait=most_significant_trait_phrase
-    )
-
-    # 結論部分の組み立て
-    trait_parts = []
-    # 上位2つの特性を文章に含める
-    for trait_name, score in sorted_scores[:2]:
-        level = "high" if score >= 5 else "low"
-        trait_parts.append(synthesis_phrases["traits"][trait_name][level])
-
-    synthesis_conclusion = f"{trait_parts[0]}と{trait_parts[1]}を併せ持つクリエイター"
-
-    outro = synthesis_phrases["outro"].format(synthesis_conclusion=synthesis_conclusion)
-    
-    synthesis = f"{intro} {bridge} {outro}"
-
-    return suited_for, not_suited_for, synthesis
+    return list(suited_for_set), list(not_suited_for_set), synthesis
 
 # グローバル変数でセッション管理
 USER_SESSIONS = {}
@@ -161,13 +153,9 @@ def submit_answers():
     if not all([user_id, answers, len(answers) == 20]):
         return jsonify({'error': '無効なデータです'}), 400
     
-    # 診断実行
     main_core, sub_core, seven_dimensions = calculate_creator_personality_final(answers, QUESTIONS_DATA, TYPE_LOGIC)
-    
-    # 動的な分析結果を生成
     suited_for, not_suited_for, synthesis = generate_dynamic_analysis(main_core, sub_core, seven_dimensions, TRAIT_DEFINITIONS)
 
-    # レスポンスの構築
     response = {
         'user_id': user_id,
         'main_core_name': ANALYSIS_PATTERNS.get(main_core, {}).get("name", main_core),
@@ -175,9 +163,7 @@ def submit_answers():
         'suited_for': suited_for,
         'not_suited_for': not_suited_for,
         'synthesis': synthesis,
-        'radar_scores': {
-            k: round(v, 1) for k, v in seven_dimensions.items()
-        },
+        'radar_scores': {k: round(v, 1) for k, v in seven_dimensions.items()},
         'completed_at': datetime.now().isoformat()
     }
     
@@ -189,15 +175,8 @@ def download_pdf(user_id):
     if user_id in USER_SESSIONS:
         result_data = USER_SESSIONS[user_id]
     else:
-        # ダミーデータ
-        result_data = {
-            'main_core_name': '孤高のアーティスト',
-            'sub_core_title': '静かな共感の表現者',
-            'suited_for': ['新しい表現方法の探求', 'オリジナリティの高い企画立案'],
-            'not_suited_for': ['定型的な作業の繰り返し', '既存ルールの厳守'],
-            'synthesis': 'あなたは『孤高のアーティスト』で、静かなる共感の表現者傾向があります。 斬新なアイデアを生み出す独創性を持っており、特に物事を計画通りに進める緻密さがあなたの強みです。 これらの特性を総合すると、あなたは斬新なアイデアを生み出す独創性と物事を計画通りに進める緻密さを併せ持つクリエイターと言えるでしょう。',
-            'radar_scores': {'独創性': 8.5, '計画性': 7.0, '社交性': 2.5, '共感力': 5.0, '精神的安定性': 5.5, '創作スタイル': 8.0, '協働適性': 3.5}
-        }
+        # サーバー再起動などでセッションが消えた場合のダミーデータ
+        return jsonify({'error': '診断セッションが見つかりません。もう一度診断してください。'}), 404
     
     pdf_buffer = generate_pdf_report_final("動画クリエイター特性診断レポート", result_data)
     pdf_buffer.seek(0)
