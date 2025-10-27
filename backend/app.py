@@ -12,10 +12,10 @@ CORS(app)
 
 # --- ファイルパスの定義 ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-QUESTIONS_PATH = os.path.join(BASE_DIR, '..', 'data', 'questions.json')
-TYPE_LOGIC_PATH = os.path.join(BASE_DIR, '..', 'data', 'type_logic.json')  
-ANALYSIS_PATTERNS_PATH = os.path.join(BASE_DIR, '..', 'data', 'analysis_patterns.json')
-TRAIT_DEFINITIONS_PATH = os.path.join(BASE_DIR, '..', 'data', 'trait_definitions.json')
+QUESTIONS_PATH = os.path.join(BASE_DIR, 'data', 'questions.json')
+TYPE_LOGIC_PATH = os.path.join(BASE_DIR, 'data', 'type_logic.json')  
+ANALYSIS_PATTERNS_PATH = os.path.join(BASE_DIR, 'data', 'analysis_patterns.json')
+TRAIT_DEFINITIONS_PATH = os.path.join(BASE_DIR, 'data', 'trait_definitions.json')
 
 # --- 設定ファイルの読み込み ---
 try:
@@ -72,7 +72,7 @@ def calculate_creator_personality_final(answers, questions_data, logic_data):
                 similarity_scores[core_type] = similarity
         
         main_core = max(similarity_scores, key=similarity_scores.get) if similarity_scores else 'Practical Entertainer'
-            
+
     sub_core_scores = {}
     sub_core = "The Planner"
     if 'sub_cores' in logic_data and isinstance(logic_data['sub_cores'], dict):
