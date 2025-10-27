@@ -105,17 +105,26 @@ def generate_dynamic_analysis(main_core, sub_core, seven_dimensions, definitions
         suited_for_set.update(tendencies[trait]["low"].get("suited", []))
         not_suited_for_set.update(tendencies[trait]["low"].get("not_suited", []))
     
-    # 中間スコアから2つずつ追加
+    middle_suited = []
+    middle_not_suited = []
     sorted_middle = sorted(middle_traits.items(), key=lambda item: abs(item[1] - 5))
-    for trait, score in sorted_middle[:2]:
-        suited_for_set.update(tendencies[trait]["middle"].get("suited", []))
-        not_suited_for_set.update(tendencies[trait]["middle"].get("not_suited", []))
+    for trait, score in sorted_middle:
+        middle_suited.extend(tendencies[trait]["middle"].get("suited", []))
+        middle_not_suited.extend(tendencies[trait]["middle"].get("not_suited", []))
     
-    # 分析結果のまとめを生成
+    needed_suited = 6 - len(suited_for_set)
+    if needed_suited > 0:
+        suited_for_set.update(middle_suited[:needed_suited])
+        
+    needed_not_suited = 6 - len(not_suited_for_set)
+    if needed_not_suited > 0:
+        not_suited_for_set.update(middle_not_suited[:needed_not_suited])
+
     templates = definitions["synthesis_templates"]
-    sorted_scores = sorted(seven_dimensions.items(), key=lambda item: abs(item[1] - 5), reverse=True)
-    trait1_name, trait1_score = sorted_scores[0]
-    trait2_name, trait2_score = sorted_scores[1]
+    
+    sorted_by_score = sorted([item for item in seven_dimensions.items() if item[0] in base_traits], key=lambda item: item[1], reverse=True)
+    trait1_name, trait1_score = sorted_by_score[0]
+    trait2_name, trait2_score = sorted_by_score[1]
 
     def get_level(score):
         if score >= 7.0: return "high"

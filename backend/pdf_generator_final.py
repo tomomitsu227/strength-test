@@ -26,7 +26,6 @@ TEXT_COLOR_HEX = '#1F2937'
 BORDER_COLOR = colors.lightgrey
 
 def create_radar_chart_buffer(scores):
-    # ステータス名をWeb版と統一
     labels = ['好奇心', '計画性', '社交性', '共感力', '繊細さ', '制作スタイル', '協働適性']
     values = [scores.get(label, 0) for label in labels]
     
@@ -50,16 +49,16 @@ def create_radar_chart_buffer(scores):
     font_prop = fm.FontProperties(fname=FONT_PATH, size=12)
     ax.set_xticklabels(labels, fontproperties=font_prop)
     
-    ax.set_ylim(0, 10)
+    # 表示上のy軸の範囲を2-10に設定
+    ax.set_ylim(2, 10)
     ax.set_yticks([2, 4, 6, 8, 10])
-    ax.set_yticklabels(['2', '4', '6', '8', '10'], color="grey", size=9)
+    ax.set_yticklabels([], color="grey", size=9) # 目盛り数字は非表示に
     ax.grid(True, linestyle='--', alpha=0.5)
     
-    # 軸の色を薄くする
     ax.spines['polar'].set_color('lightgrey')
 
     img_buffer = BytesIO()
-    plt.tight_layout()
+    # transparent=Trueで背景を透過
     plt.savefig(img_buffer, format='PNG', dpi=150, bbox_inches='tight', transparent=True)
     plt.close(fig)
     
@@ -102,7 +101,7 @@ def generate_pdf_report_final(user_name, data):
     radar_scores = data.get('radar_scores', {})
     if radar_scores:
         radar_buffer = create_radar_chart_buffer(radar_scores)
-        img = RLImage(radar_buffer, width=140*mm, height=140*mm) # サイズを少し調整
+        img = RLImage(radar_buffer, width=140*mm, height=140*mm)
         img.hAlign = 'CENTER'
         story.append(img)
     
@@ -127,14 +126,13 @@ def generate_pdf_report_final(user_name, data):
         if not items: return None
         content = [Paragraph(title, heading_style)] + create_bullet_list(items, body_style)
         tbl_content = [ [c] for c in content ]
-        # はみ出し防止のため、colWidthsを明示的に設定
         tbl = Table(tbl_content, colWidths=[doc.width - (box_padding * 2)], style=box_style, spaceAfter=6*mm)
         return tbl
 
-    suited_card = build_card("向いていること", data.get('suited_for', []))
+    suited_card = build_card("得意", data.get('suited_for', []))
     if suited_card: story.append(suited_card)
 
-    not_suited_card = build_card("向いていないこと", data.get('not_suited_for', []))
+    not_suited_card = build_card("苦手", data.get('not_suited_for', []))
     if not_suited_card: story.append(not_suited_card)
     
     synthesis = data.get('synthesis', '')

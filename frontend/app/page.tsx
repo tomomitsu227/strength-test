@@ -115,18 +115,15 @@ export default function CreatorDiagnosisPage() {
           </motion.div>
           <div className="max-w-2xl mx-auto mb-12">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-xl">
-              <div className="flex flex-col md:flex-row items-center text-center md:text-left gap-6">
+              <div className="flex flex-col items-center text-center gap-4">
                 <IconWrapper><svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></IconWrapper>
-                <div>
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">あなたの「才能」が輝く場所を知る</h3>
-                  <p className="text-gray-600 dark:text-gray-300 leading-relaxed">どのような環境で輝き、何を手放すべきか。一人で黙々と作業するべきか、チームで協力するべきか。あなたの生まれ持った特性を客観的に分析し、無理なく活動を続けるための指針を示します。</p>
-                </div>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">あなたの「才能」が輝く場所を知る</h3>
+                <p className="text-gray-600 dark:text-gray-300 leading-relaxed">どのような環境で輝き、何を手放すべきか。一人で黙々と作業するべきか、チームで協力するべきか。あなたの生まれ持った特性を客観的に分析し、無理なく活動を続けるための指針を示します。</p>
               </div>
             </motion.div>
           </div>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.6 }} className="text-center">
-            <button onClick={() => setStarted(true)} className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white text-xl font-bold py-6 px-12 rounded-full shadow-2xl transform hover:scale-105 transition-all duration-300">診断を始める</button>
-            <p className="mt-6 text-gray-500 dark:text-gray-400">所要時間: 約3分</p>
+            <button onClick={() => setStarted(true)} className="bg-red-500 hover:bg-red-600 text-white text-xl font-bold py-6 px-12 rounded-full shadow-2xl transform hover:scale-105 transition-all duration-300">診断を始める</button>
           </motion.div>
         </div>
       </div>
@@ -142,7 +139,7 @@ export default function CreatorDiagnosisPage() {
           <div className="mb-8">
             <div className="flex justify-end items-center mb-2"><span className="text-sm font-semibold text-red-500">{Math.round(progress)}%</span></div>
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-              <motion.div initial={{ width: `${(progress - 5)}%`}} animate={{ width: `${progress}%` }} className="bg-gradient-to-r from-red-500 to-orange-500 h-2 rounded-full" transition={{ duration: 0.3 }} />
+              <motion.div initial={{ width: `${(progress - 5)}%`}} animate={{ width: `${progress}%` }} className="bg-red-500 h-2 rounded-full" transition={{ duration: 0.3 }} />
             </div>
           </div>
           <AnimatePresence mode="wait">
@@ -174,7 +171,7 @@ export default function CreatorDiagnosisPage() {
   if (result) {
     const radarLabels = ['好奇心','計画性','社交性','共感力','繊細さ','制作スタイル','協働適性'];
     const radarData = { labels: radarLabels, datasets: [{ label: 'あなたのスコア', data: radarLabels.map(label => result.radar_scores?.[label] || 0), backgroundColor: 'rgba(239,68,68,0.2)', borderColor: '#EF4444', pointBackgroundColor: '#EF4444', pointBorderColor: '#fff', pointHoverBackgroundColor: '#fff', pointHoverBorderColor: '#EF4444' }]};
-    const radarOptions = { scales: { r: { min: 0, max: 10, ticks: { stepSize: 2, color: '#6B7280', font: { size: 12 }}, pointLabels: { font: { size: 14, family: 'Noto Sans JP, sans-serif' }, color: '#374151' }, grid: { color: '#E5E7EB' }}}, plugins: { legend: { display: false }}};
+    const radarOptions = { scales: { r: { min: 2, max: 10, ticks: { stepSize: 2, display: false }, pointLabels: { font: { size: 14, family: 'Noto Sans JP, sans-serif' }, color: '#374151' }, grid: { color: '#E5E7EB' }}}, plugins: { legend: { display: false }}};
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 dark:from-gray-900 dark:to-gray-800 py-12 px-4">
         <div className="max-w-4xl mx-auto">
@@ -210,7 +207,7 @@ export default function CreatorDiagnosisPage() {
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{result.synthesis || '…'}</p>
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }} className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button onClick={handleDownloadPDF} className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-bold py-4 px-8 rounded-full shadow-lg transform hover:scale-105 transition-all duration-300">
+            <button onClick={handleDownloadPDF} className="bg-red-500 hover:bg-red-600 text-white font-bold py-4 px-8 rounded-full shadow-lg transform hover:scale-105 transition-all duration-300">
               <svg className="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>PDFでダウンロード
             </button>
             <button onClick={() => { setStarted(false); setResult(null); setAnswers([]); setCurrentQuestion(0);}} className="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-bold py-4 px-8 rounded-full shadow-lg transform hover:scale-105 transition-all duration-300">もう一度診断する</button>
