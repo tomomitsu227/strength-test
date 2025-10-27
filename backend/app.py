@@ -103,8 +103,8 @@ def generate_dynamic_analysis(main_core, sub_core, seven_dimensions, definitions
         elif 4.0 <= score <= 6.9: level = "middle"
         
         if level:
-            suited_for_set.update(tendencies[trait][level].get("suited", []))
-            not_suited_for_set.update(tendencies[trait][level].get("not_suited", []))
+            suited_for_set.update(tendencies.get(trait, {}).get(level, {}).get("suited", []))
+            not_suited_for_set.update(tendencies.get(trait, {}).get(level, {}).get("not_suited", []))
 
     templates = definitions["synthesis_templates"]
     trait1_name, trait1_score = sorted_scores[0]
@@ -118,12 +118,12 @@ def generate_dynamic_analysis(main_core, sub_core, seven_dimensions, definitions
     trait1_level = get_level(trait1_score)
     trait2_level = get_level(trait2_score)
     
-    trait1_insight = templates["trait_insights"].get(trait1_name, {}).get(trait1_level, {})
-    trait2_desc = templates["secondary_traits"].get(trait2_name, {}).get(trait2_level, "")
-    sub_core_description = definitions["sub_core_descriptions"].get(sub_core, "")
+    trait1_insight = definitions.get("synthesis_templates", {}).get("trait_insights", {}).get(trait1_name, {}).get(trait1_level, {"demerit": "", "merit": ""})
+    trait2_desc = definitions.get("synthesis_templates", {}).get("secondary_traits", {}).get(trait2_name, {}).get(trait2_level, "")
+    sub_core_description = definitions.get("sub_core_descriptions", {}).get(sub_core, "")
     
-    role = definitions["role_environment_map"].get(trait1_name, {}).get(trait1_level, {}).get("role", "個性的なクリエイター")
-    environment = definitions["role_environment_map"].get(trait2_name, {}).get(trait2_level, {}).get("environment", "独自のスタイルが活きる場所")
+    role = definitions.get("role_environment_map", {}).get(trait1_name, {}).get(trait1_level, {}).get("role", "個性的なクリエイター")
+    environment = definitions.get("role_environment_map", {}).get(trait2_name, {}).get(trait2_level, {}).get("environment", "独自のスタイルが活きる場所")
 
     synthesis = templates["base"].format(
         trait1_name=trait1_name, 
@@ -137,6 +137,7 @@ def generate_dynamic_analysis(main_core, sub_core, seven_dimensions, definitions
 
     return list(suited_for_set)[:8], list(not_suited_for_set)[:8], synthesis
 
+# グローバル変数でセッション管理
 USER_SESSIONS = {}
 
 @app.route('/api/questions', methods=['GET'])
