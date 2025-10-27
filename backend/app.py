@@ -8,9 +8,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from pdf_generator_final import generate_pdf_report_final
 
 app = Flask(__name__)
-# フロントエンドのURLを明示的に許可する
-frontend_url = "https://strength-test-i9b8j0onm-tomsprojects-67b5aaa5.vercel.app"
-CORS(app, resources={r"/api/*": {"origins": frontend_url}})
+CORS(app)
 
 # --- ファイルパスの定義 ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
