@@ -26,19 +26,22 @@ TEXT_COLOR_HEX = '#1F2937'
 BORDER_COLOR = colors.lightgrey
 
 def create_radar_chart_buffer(scores):
+    # ステータス名をWeb版と統一
     labels = ['好奇心', '計画性', '社交性', '共感力', '繊細さ', '制作スタイル', '協働適性']
     values = [scores.get(label, 0) for label in labels]
     
     num_vars = len(labels)
-    # 90度回転させて一番上から開始
     angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
-    angles = [angle + np.pi/2 for angle in angles]
-
+    
     values_to_plot = np.concatenate((values, [values[0]]))
     angles_to_plot = angles + [angles[0]]
     
     fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(projection='polar'))
     
+    # チャートの向きをWeb版(Chart.js)のデフォルトに合わせる
+    ax.set_theta_offset(np.pi / 2)
+    ax.set_theta_direction(-1)
+
     ax.plot(angles_to_plot, values_to_plot, 'o-', linewidth=2, color=PRIMARY_COLOR_HEX)
     ax.fill(angles_to_plot, values_to_plot, alpha=0.25, color=PRIMARY_COLOR_HEX)
     
@@ -49,16 +52,15 @@ def create_radar_chart_buffer(scores):
     
     ax.set_ylim(0, 10)
     ax.set_yticks([2, 4, 6, 8, 10])
-    ax.set_yticklabels(['2', '4', '6', '8', '10'], size=9)
+    ax.set_yticklabels(['2', '4', '6', '8', '10'], color="grey", size=9)
     ax.grid(True, linestyle='--', alpha=0.5)
-
-    # チャートの向きを調整
-    ax.set_theta_offset(np.pi / 2)
-    ax.set_theta_direction(-1)
     
+    # 軸の色を薄くする
+    ax.spines['polar'].set_color('lightgrey')
+
     img_buffer = BytesIO()
     plt.tight_layout()
-    plt.savefig(img_buffer, format='PNG', dpi=150, bbox_inches='tight')
+    plt.savefig(img_buffer, format='PNG', dpi=150, bbox_inches='tight', transparent=True)
     plt.close(fig)
     
     img_buffer.seek(0)
@@ -100,7 +102,8 @@ def generate_pdf_report_final(user_name, data):
     radar_scores = data.get('radar_scores', {})
     if radar_scores:
         radar_buffer = create_radar_chart_buffer(radar_scores)
-        img = RLImage(radar_buffer, width=120*mm, height=120*mm)
+        img = RLImage(radar_buffer, width=140*mm, height=140*mm) # サイズを少し調整
+        img.hAlign = 'CENTER'
         story.append(img)
     
     story.append(PageBreak())
@@ -124,6 +127,7 @@ def generate_pdf_report_final(user_name, data):
         if not items: return None
         content = [Paragraph(title, heading_style)] + create_bullet_list(items, body_style)
         tbl_content = [ [c] for c in content ]
+        # はみ出し防止のため、colWidthsを明示的に設定
         tbl = Table(tbl_content, colWidths=[doc.width - (box_padding * 2)], style=box_style, spaceAfter=6*mm)
         return tbl
 
