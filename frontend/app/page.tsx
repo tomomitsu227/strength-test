@@ -31,7 +31,7 @@ interface ResultData {
 }
 
 const IconWrapper = ({ children }: { children: React.ReactNode }) => (
-  <div className="flex items-center justify-center w-12 h-12 bg-red-100 dark:bg-gray-700 rounded-full mb-4">
+  <div className="flex items-center justify-center w-12 h-12 bg-red-100 dark:bg-gray-700 rounded-full">
     {children}
   </div>
 );
@@ -105,7 +105,6 @@ export default function CreatorDiagnosisPage() {
     );
   }
 
-  // トップページ
   if (!started && !result) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
@@ -116,9 +115,13 @@ export default function CreatorDiagnosisPage() {
           </motion.div>
           <div className="max-w-2xl mx-auto mb-12">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-xl">
-              <IconWrapper><svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></IconWrapper>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 text-center">あなたの「才能」が輝く場所を知る</h3>
-              <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-center">どのような環境で輝き、何を手放すべきか。一人で黙々と作業するべきか、チームで協力するべきか。あなたの生まれ持った特性を客観的に分析し、無理なく活動を続けるための指針を示します。</p>
+              <div className="flex flex-col md:flex-row items-center text-center md:text-left gap-6">
+                <IconWrapper><svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></IconWrapper>
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">あなたの「才能」が輝く場所を知る</h3>
+                  <p className="text-gray-600 dark:text-gray-300 leading-relaxed">どのような環境で輝き、何を手放すべきか。一人で黙々と作業するべきか、チームで協力するべきか。あなたの生まれ持った特性を客観的に分析し、無理なく活動を続けるための指針を示します。</p>
+                </div>
+              </div>
             </motion.div>
           </div>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.6 }} className="text-center">
@@ -130,7 +133,6 @@ export default function CreatorDiagnosisPage() {
     );
   }
 
-  // 質問画面
   if (!result && started) {
     const q = questionsData.questions[currentQuestion];
     const progress = ((currentQuestion + 1) / questionsData.questions.length) * 100;
@@ -169,7 +171,6 @@ export default function CreatorDiagnosisPage() {
     );
   }
 
-  // 結果表示画面
   if (result) {
     const radarLabels = ['好奇心','計画性','社交性','共感力','繊細さ','制作スタイル','協働適性'];
     const radarData = { labels: radarLabels, datasets: [{ label: 'あなたのスコア', data: radarLabels.map(label => result.radar_scores?.[label] || 0), backgroundColor: 'rgba(239,68,68,0.2)', borderColor: '#EF4444', pointBackgroundColor: '#EF4444', pointBorderColor: '#fff', pointHoverBackgroundColor: '#fff', pointHoverBorderColor: '#EF4444' }]};
@@ -196,11 +197,11 @@ export default function CreatorDiagnosisPage() {
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="grid md:grid-cols-2 gap-6 mb-8">
             <div className="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 rounded-r-2xl p-6 shadow-lg">
-              <h3 className="text-xl font-bold text-green-700 dark:text-green-400 mb-4 flex items-center"><svg className="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>向いていること</h3>
+              <h3 className="text-xl font-bold text-green-700 dark:text-green-400 mb-4 flex items-center"><svg className="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>得意</h3>
               <ul className="space-y-2 list-disc list-inside text-gray-700 dark:text-gray-300">{result.suited_for.map((item, index) => <li key={index}>{item}</li>)}</ul>
             </div>
             <div className="bg-gray-50 dark:bg-gray-700/20 border-l-4 border-gray-500 rounded-r-2xl p-6 shadow-lg">
-              <h3 className="text-xl font-bold text-gray-700 dark:text-gray-400 mb-4 flex items-center"><svg className="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>向いていないこと</h3>
+              <h3 className="text-xl font-bold text-gray-700 dark:text-gray-400 mb-4 flex items-center"><svg className="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>苦手</h3>
                <ul className="space-y-2 list-disc list-inside text-gray-700 dark:text-gray-300">{result.not_suited_for.map((item, index) => <li key={index}>{item}</li>)}</ul>
             </div>
           </motion.div>

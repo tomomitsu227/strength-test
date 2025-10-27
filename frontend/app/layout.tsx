@@ -1,19 +1,22 @@
-import type { Metadata } from 'next'
-import './globals.css'
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'あなたの強みを発見 | YouTube強み診断',
-  description: '簡単な5分間の診断で、あなたに最適なYouTubeジャンルと成功戦略がわかる',
-}
+  title: "動画クリエイター特性診断",
+  description: "20の質問から、あなたのクリエイターとしての「核」と、才能が輝くスタイルを発見します。",
+};
 
 export default function RootLayout({
   children,
-}: {
-  children: React.ReactNode
-}) {
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html lang="ja" suppressHydrationWarning>
-      <body suppressHydrationWarning>{children}</body>
+    <html lang="ja">
+      <body className={inter.className}>{children}</body>
     </html>
-  )
+  );
 }

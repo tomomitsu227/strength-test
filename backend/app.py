@@ -89,24 +89,31 @@ def calculate_creator_personality_final(answers, questions_data, logic_data):
 # --- 分析結果生成ロジック ---
 def generate_dynamic_analysis(main_core, sub_core, seven_dimensions, definitions):
     base_traits = ["好奇心", "計画性", "社交性", "共感力", "繊細さ"]
-    sorted_scores = sorted(seven_dimensions.items(), key=lambda item: abs(item[1] - 5), reverse=True)
+    
+    high_traits = {t:s for t, s in seven_dimensions.items() if t in base_traits and s >= 7.0}
+    low_traits = {t:s for t, s in seven_dimensions.items() if t in base_traits and s <= 3.9}
+    middle_traits = {t:s for t, s in seven_dimensions.items() if t in base_traits and 4.0 <= s <= 6.9}
 
     suited_for_set = set()
     not_suited_for_set = set()
     tendencies = definitions["tendencies"]
 
-    for trait, score in seven_dimensions.items():
-        if trait not in base_traits: continue
-        level = ""
-        if score >= 7.0: level = "high"
-        elif score <= 3.9: level = "low"
-        elif 4.0 <= score <= 6.9: level = "middle"
-        
-        if level:
-            suited_for_set.update(tendencies.get(trait, {}).get(level, {}).get("suited", []))
-            not_suited_for_set.update(tendencies.get(trait, {}).get(level, {}).get("not_suited", []))
-
+    for trait in high_traits:
+        suited_for_set.update(tendencies[trait]["high"].get("suited", []))
+        not_suited_for_set.update(tendencies[trait]["high"].get("not_suited", []))
+    for trait in low_traits:
+        suited_for_set.update(tendencies[trait]["low"].get("suited", []))
+        not_suited_for_set.update(tendencies[trait]["low"].get("not_suited", []))
+    
+    # 中間スコアから2つずつ追加
+    sorted_middle = sorted(middle_traits.items(), key=lambda item: abs(item[1] - 5))
+    for trait, score in sorted_middle[:2]:
+        suited_for_set.update(tendencies[trait]["middle"].get("suited", []))
+        not_suited_for_set.update(tendencies[trait]["middle"].get("not_suited", []))
+    
+    # 分析結果のまとめを生成
     templates = definitions["synthesis_templates"]
+    sorted_scores = sorted(seven_dimensions.items(), key=lambda item: abs(item[1] - 5), reverse=True)
     trait1_name, trait1_score = sorted_scores[0]
     trait2_name, trait2_score = sorted_scores[1]
 
@@ -118,12 +125,12 @@ def generate_dynamic_analysis(main_core, sub_core, seven_dimensions, definitions
     trait1_level = get_level(trait1_score)
     trait2_level = get_level(trait2_score)
     
-    trait1_insight = definitions.get("synthesis_templates", {}).get("trait_insights", {}).get(trait1_name, {}).get(trait1_level, {"demerit": "", "merit": ""})
-    trait2_desc = definitions.get("synthesis_templates", {}).get("secondary_traits", {}).get(trait2_name, {}).get(trait2_level, "")
-    sub_core_description = definitions.get("sub_core_descriptions", {}).get(sub_core, "")
+    trait1_insight = templates["trait_insights"].get(trait1_name, {}).get(trait1_level, {})
+    trait2_desc = templates["secondary_traits"].get(trait2_name, {}).get(trait2_level, "")
+    sub_core_description = definitions["sub_core_descriptions"].get(sub_core, "")
     
-    role = definitions.get("role_environment_map", {}).get(trait1_name, {}).get(trait1_level, {}).get("role", "個性的なクリエイター")
-    environment = definitions.get("role_environment_map", {}).get(trait2_name, {}).get(trait2_level, {}).get("environment", "独自のスタイルが活きる場所")
+    work_style = definitions["work_styles"].get(trait1_name, {}).get(trait1_level, "")
+    collaboration_style = definitions["collaboration_styles"].get(trait2_name, {}).get(trait2_level, "")
 
     synthesis = templates["base"].format(
         trait1_name=trait1_name, 
@@ -131,13 +138,12 @@ def generate_dynamic_analysis(main_core, sub_core, seven_dimensions, definitions
         merit=trait1_insight.get("merit", ""),
         trait2_desc=trait2_desc,
         sub_core_description=sub_core_description,
-        role=role,
-        environment=environment
+        work_style=work_style,
+        collaboration_style=collaboration_style
     )
 
-    return list(suited_for_set)[:8], list(not_suited_for_set)[:8], synthesis
+    return list(suited_for_set)[:6], list(not_suited_for_set)[:6], synthesis
 
-# グローバル変数でセッション管理
 USER_SESSIONS = {}
 
 @app.route('/api/questions', methods=['GET'])
