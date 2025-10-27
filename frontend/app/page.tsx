@@ -45,7 +45,7 @@ export default function CreatorDiagnosisPage() {
 
   useEffect(() => {
     async function fetchQuestions() {
-      const res = await axios.get(`${API_BASE}/questions`);
+      const res = await axios.get(`${API_BASE}/api/questions`);
       setQuestionsData(res.data);
     }
     fetchQuestions();
