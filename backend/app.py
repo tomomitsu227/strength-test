@@ -11,24 +11,11 @@ app = Flask(__name__)
 CORS(app)
 
 # --- ファイルパスの定義 ---
-# Koyebの環境変数からルートディレクトリを取得。ローカルでのテスト用にデフォルト値も設定。
-APP_ROOT = os.getenv('KOYEB_ROOT_DIR', os.path.dirname(os.path.abspath(__file__)))
-
-# backendディレクトリへのパスを構築
-# ローカル環境では__file__がbackend/app.pyを指すため、os.path.dirnameでbackendディレクトリが取得できる
-# Koyeb環境では KOYEB_ROOT_DIR (/workspace) が基準になるため、'backend'を追加する
-if os.getenv('KOYEB_ROOT_DIR'):
-    BASE_DIR = os.path.join(APP_ROOT, 'backend')
-else:
-    BASE_DIR = APP_ROOT
-
-QUESTIONS_PATH = os.path.join(BASE_DIR, 'data', 'questions.json')
-TYPE_LOGIC_PATH = os.path.join(BASE_DIR, 'data', 'type_logic.json')  
-ANALYSIS_PATTERNS_PATH = os.path.join(BASE_DIR, 'data', 'analysis_patterns.json')
-TRAIT_DEFINITIONS_PATH = os.path.join(BASE_DIR, 'data', 'trait_definitions.json')
-
-# パスが正しいかデバッグ用に表示
-print(f"DEBUG: Trying to load questions from: {QUESTIONS_PATH}")
+# run.shによってカレントディレクトリがbackendに設定されているため、相対パスで指定
+QUESTIONS_PATH = 'data/questions.json'
+TYPE_LOGIC_PATH = 'data/type_logic.json'
+ANALYSIS_PATTERNS_PATH = 'data/analysis_patterns.json'
+TRAIT_DEFINITIONS_PATH = 'data/trait_definitions.json'
 
 # --- 設定ファイルの読み込み ---
 try:
