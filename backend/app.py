@@ -60,16 +60,19 @@ def calculate_creator_personality_final(answers, questions_data, logic_data):
     dimension_order = ["Openness", "Conscientiousness", "Extraversion", "Agreeableness", "Neuroticism"]
     user_vector = np.array([big_five_raw[dim] for dim in dimension_order])
     
-    similarity_scores = {}
-    if 'main_core_profiles' in logic_data:
-        for core_type, core_data in logic_data['main_core_profiles'].items():
-            ideal_vector_list = [core_data['ideal_scores'].get(dim, 0) for dim in dimension_order]
-            ideal_vector = np.array(ideal_vector_list)
-            similarity = cosine_similarity(user_vector.reshape(1, -1), ideal_vector.reshape(1, -1))[0][0]
-            similarity_scores[core_type] = similarity
-    
-    main_core = max(similarity_scores, key=similarity_scores.get) if similarity_scores else 'Practical Entertainer'
-    
+    if np.all(user_vector == 0):
+        main_core = logic_data.get("fallback_main_core", "Practical Entertainer")
+    else:
+        similarity_scores = {}
+        if 'main_core_profiles' in logic_data:
+            for core_type, core_data in logic_data['main_core_profiles'].items():
+                ideal_vector_list = [core_data['ideal_scores'].get(dim, 0) for dim in dimension_order]
+                ideal_vector = np.array(ideal_vector_list)
+                similarity = cosine_similarity(user_vector.reshape(1, -1), ideal_vector.reshape(1, -1))[0][0]
+                similarity_scores[core_type] = similarity
+        
+        main_core = max(similarity_scores, key=similarity_scores.get) if similarity_scores else 'Practical Entertainer'
+            
     sub_core_scores = {}
     sub_core = "The Planner"
     if 'sub_cores' in logic_data and isinstance(logic_data['sub_cores'], dict):
