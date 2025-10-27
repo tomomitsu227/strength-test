@@ -47,7 +47,6 @@ def calculate_creator_personality_final(answers, questions_data, logic_data):
         if max_val == min_val: return 5.0
         return ((raw_score - min_val) / (max_val - min_val)) * 10
     
-    # 繊細さ(Neuroticism)はスコアを反転させる
     seven_dimensions = {
         "好奇心": normalize_score(big_five_raw["Openness"], -8, 8),
         "計画性": normalize_score(big_five_raw["Conscientiousness"], -8, 8),
@@ -107,7 +106,6 @@ def generate_dynamic_analysis(main_core, sub_core, seven_dimensions, definitions
             suited_for_set.update(tendencies[trait][level].get("suited", []))
             not_suited_for_set.update(tendencies[trait][level].get("not_suited", []))
 
-    # 分析結果のまとめを生成
     templates = definitions["synthesis_templates"]
     trait1_name, trait1_score = sorted_scores[0]
     trait2_name, trait2_score = sorted_scores[1]
@@ -120,13 +118,13 @@ def generate_dynamic_analysis(main_core, sub_core, seven_dimensions, definitions
     trait1_level = get_level(trait1_score)
     trait2_level = get_level(trait2_score)
     
-    trait1_insight = templates["trait_insights"][trait1_name][trait1_level]
-    trait2_desc = templates["secondary_traits"][trait2_name][trait2_level]
+    # .get()を使用して安全にアクセス
+    trait1_insight = definitions.get("synthesis_templates", {}).get("trait_insights", {}).get(trait1_name, {}).get(trait1_level, {"demerit": "", "merit": ""})
+    trait2_desc = definitions.get("synthesis_templates", {}).get("secondary_traits", {}).get(trait2_name, {}).get(trait2_level, "")
+    sub_core_description = definitions.get("sub_core_descriptions", {}).get(sub_core, "")
     
-    sub_core_description = definitions["sub_core_descriptions"].get(sub_core, "")
-    
-    role = definitions["role_environment_map"][trait1_name][trait1_level]["role"]
-    environment = definitions["role_environment_map"][trait2_name][trait2_level]["environment"]
+    role = definitions.get("role_environment_map", {}).get(trait1_name, {}).get(trait1_level, {}).get("role", "個性的なクリエイター")
+    environment = definitions.get("role_environment_map", {}).get(trait2_name, {}).get(trait2_level, {}).get("environment", "独自のスタイルが活きる場所")
 
     synthesis = templates["base"].format(
         trait1_name=trait1_name, 
