@@ -11,7 +11,8 @@ app = Flask(__name__)
 CORS(app)
 
 # --- ファイルパスの定義 ---
-# run.shによってカレントディレクトリがbackendに設定されているため、相対パスで指定
+# Koyebのビルドプロセスにより、app.py と data/ は同じ階層 (/workspace) に配置されます。
+# したがって、単純な相対パスでファイルにアクセスできます。
 QUESTIONS_PATH = 'data/questions.json'
 TYPE_LOGIC_PATH = 'data/type_logic.json'
 ANALYSIS_PATTERNS_PATH = 'data/analysis_patterns.json'
