@@ -68,7 +68,7 @@ export default function CreatorDiagnosisPage() {
   const submitAnswers = async (ans: number[]) => {
     const user_id = 'user-' + Math.random().toString(36).slice(2, 8);
     try {
-      const res = await axios.post(`${API_BASE}/submit`, { user_id, answers: ans });
+      const res = await axios.post(`${API_BASE}/api/submit`, { user_id, answers: ans });
       if (res.data && res.data.radar_scores) setResult(res.data);
       else alert('診断結果の取得に失敗しました');
     } catch (error) {
@@ -80,7 +80,7 @@ export default function CreatorDiagnosisPage() {
   const handleDownloadPDF = async () => {
     if (!result) return;
     try {
-      const response = await axios.get(`${API_BASE}/pdf/${result.user_id}`, { responseType: 'blob' });
+      const response = await axios.get(`${API_BASE}/api/pdf/${result.user_id}`, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
