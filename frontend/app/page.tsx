@@ -114,16 +114,11 @@ export default function CreatorDiagnosisPage() {
             <h1 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">動画クリエイター特性診断</h1>
             <p className="text-xl md:text-2xl text-gray-700 dark:text-gray-300 mb-8">20の質問から、あなたのクリエイターとしての「核」と、才能が輝くスタイルを発見します。</p>
           </motion.div>
-          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-12">
-            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-xl">
-              <IconWrapper><svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg></IconWrapper>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">あなたの「本質」を理解する</h3>
-              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">どのような環境で輝き、何を手放すべきか。あなたの生まれ持った特性を客観的に分析し、無理なく活動を続けるための指針を示します。</p>
-            </motion.div>
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.4 }} className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-xl">
-              <IconWrapper><svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg></IconWrapper>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">最適な「創作スタイル」を発見する</h3>
-              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">一人で黙々と作業するべきか、チームで協力するべきか。あなたの特性に合った動画の作り方や、チャンネル運営の方向性が明確になります。</p>
+          <div className="max-w-2xl mx-auto mb-12">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-xl">
+              <IconWrapper><svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></IconWrapper>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 text-center">あなたの「才能」が輝く場所を知る</h3>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-center">どのような環境で輝き、何を手放すべきか。一人で黙々と作業するべきか、チームで協力するべきか。あなたの生まれ持った特性を客観的に分析し、無理なく活動を続けるための指針を示します。</p>
             </motion.div>
           </div>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.6 }} className="text-center">
@@ -176,7 +171,7 @@ export default function CreatorDiagnosisPage() {
 
   // 結果表示画面
   if (result) {
-    const radarLabels = ['独創性','計画性','社交性','共感力','精神的安定性','創作スタイル','協働適性'];
+    const radarLabels = ['好奇心','計画性','社交性','共感力','繊細さ','制作スタイル','協働適性'];
     const radarData = { labels: radarLabels, datasets: [{ label: 'あなたのスコア', data: radarLabels.map(label => result.radar_scores?.[label] || 0), backgroundColor: 'rgba(239,68,68,0.2)', borderColor: '#EF4444', pointBackgroundColor: '#EF4444', pointBorderColor: '#fff', pointHoverBackgroundColor: '#fff', pointHoverBorderColor: '#EF4444' }]};
     const radarOptions = { scales: { r: { min: 0, max: 10, ticks: { stepSize: 2, color: '#6B7280', font: { size: 12 }}, pointLabels: { font: { size: 14, family: 'Noto Sans JP, sans-serif' }, color: '#374151' }, grid: { color: '#E5E7EB' }}}, plugins: { legend: { display: false }}};
     return (

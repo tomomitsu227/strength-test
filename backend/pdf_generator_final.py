@@ -26,31 +26,35 @@ TEXT_COLOR_HEX = '#1F2937'
 BORDER_COLOR = colors.lightgrey
 
 def create_radar_chart_buffer(scores):
-    labels = ['独創性', '計画性', '社交性', '共感力', '精神的安定性', '創作スタイル', '協働適性']
-    values = [scores.get(label, 0) for label in labels] # デフォルトを0に変更
-    
-    # 描画する最小値は0だが、エラー対策で内部的に微小な値を加えることも考慮
-    # ただし、ylim(0, 10)で十分な場合が多い
+    labels = ['好奇心', '計画性', '社交性', '共感力', '繊細さ', '制作スタイル', '協働適性']
+    values = [scores.get(label, 0) for label in labels]
     
     num_vars = len(labels)
+    # 90度回転させて一番上から開始
     angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
+    angles = [angle + np.pi/2 for angle in angles]
+
     values_to_plot = np.concatenate((values, [values[0]]))
-    angles += angles[:1]
+    angles_to_plot = angles + [angles[0]]
     
     fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(projection='polar'))
     
-    ax.plot(angles, values_to_plot, 'o-', linewidth=2, color=PRIMARY_COLOR_HEX)
-    ax.fill(angles, values_to_plot, alpha=0.25, color=PRIMARY_COLOR_HEX)
+    ax.plot(angles_to_plot, values_to_plot, 'o-', linewidth=2, color=PRIMARY_COLOR_HEX)
+    ax.fill(angles_to_plot, values_to_plot, alpha=0.25, color=PRIMARY_COLOR_HEX)
     
-    ax.set_xticks(angles[:-1])
+    ax.set_xticks(angles)
     
     font_prop = fm.FontProperties(fname=FONT_PATH, size=12)
     ax.set_xticklabels(labels, fontproperties=font_prop)
     
-    ax.set_ylim(0, 10) # 最小値を0に設定
+    ax.set_ylim(0, 10)
     ax.set_yticks([2, 4, 6, 8, 10])
     ax.set_yticklabels(['2', '4', '6', '8', '10'], size=9)
     ax.grid(True, linestyle='--', alpha=0.5)
+
+    # チャートの向きを調整
+    ax.set_theta_offset(np.pi / 2)
+    ax.set_theta_direction(-1)
     
     img_buffer = BytesIO()
     plt.tight_layout()
